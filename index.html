@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>MusicXML POC</title>
+
+        <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@2.0.0/build/opensheetmusicdisplay.min.js"></script>
+        <link rel="stylesheet" href="style.css" />
+
+    </head>
+
+    <body>
+        <h1>MusicXML POC</h1>
+
+        <input id="file-input" type="file" accept=".xml, .musicxml" />
+        
+        <div class="controls">
+            <button id="prev-button" disabled>Previous</button>
+            <button id="next-button" disabled>Next</button>
+            <button id="play-button" disabled>Play</button>
+            <button id="stop-button" disabled>Stop</button>
+
+            <label>
+                Tempo:
+                <input id="tempo-slider" type="range" min="40" max="220" step="1" value="120" disabled />
+                <span id="tempo-value">120 BPM</span>
+            </label>
+        </div>
+
+        <div id="score"></div>
+
+        <script type="module" src="./js/script.js"></script>
+    </body>
+</html>
