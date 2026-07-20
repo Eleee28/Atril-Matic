@@ -1,0 +1,153 @@
+/* :root {
+    --background: #1161c8;
+    --surface: #df2222;
+    --primary: #25eb2f;
+    --primary-hover: #0d5b27;
+    --text: #edc72d;
+    --text-muted: #ffcd04;
+    --border: #bd20b8;
+} */
+
+/* Azul */
+/* :root {
+    --background: #f3f6fa;
+    --surface: #ffffff;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --text: #172033;
+    --text-muted: #64748b;
+    --border: #dbe3ee;
+} */
+
+/* Azul v2 */
+:root {
+    --background: #f3f6fa;
+    --surface: #ffffff;
+    --primary: #5182ea;
+    --primary-hover: #355ecf;
+    --text: #172033;
+    --text-muted: #64748b;
+    --border: #dbe3ee;
+}
+
+/* Marfil y verde oscuro */
+/* :root {
+    --background: #f6f4ee;
+    --surface: #fffefa;
+    --primary: #285943;
+    --primary-hover: #1f4635;
+    --text: #242724;
+    --text-muted: #707770;
+    --border: #dddcd4;
+} */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 32px;
+
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+    color: var(--text);
+    background: var(--background);
+}
+
+h1 {
+    margin: 0 0 24px;
+    font-size: 28px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    margin: 20px 0;
+    padding: 16px;
+
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.controls label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    margin-left: 8px;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+#tempo-value {
+    min-width: 68px;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+button {
+    padding: 10px 18px;
+
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+
+    color: var(--text);
+    background-color: var(--surface);
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    cursor: pointer;
+    transition: background 0.2s,
+                border-color 0.2s,
+                color 0.2s,
+                box-shadow 0.2s,
+                transform 0.05s;
+}
+
+button:hover:not(:disabled) {
+    background: var(--border);
+    border-color: var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+
+button:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+#play-button {
+    color: var(--surface);
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+#play-button:hover:not(:disabled) {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+#score {
+    min-height: 300px;
+    padding: 32px;
+
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+
+    overflow-x: auto;
+}
