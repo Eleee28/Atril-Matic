@@ -1,4 +1,5 @@
-import { osmd, stats } from "./script.js";
+import { startPlay, stopPlay } from "./player.js";
+import { elements, osmd, stats, time } from "./script.js";
 import { updateStatistics } from "./statistics.js";
 
 export function moveCursorNext() {
@@ -27,6 +28,75 @@ export function moveCursorPrevious() {
     updateStatistics();
 
     return true;
+}
+
+function clientToOsmdCoordinates(svg, clientX, clientY) {
+    const svgPoint = svg.createSVGPoint();
+
+    svgPoint.x = clientX;
+    svgPoint.y = clientY;
+
+    const tranformedPoint = svgPoint.matrixTransform(svg.getScreenCTM().inverse());
+
+    const osmdUnitInSvgPixels = 10 * osmd.Zoom;
+
+    return new opensheetmusicdisplay.PointF2D(
+        tranformedPoint.x / osmdUnitInSvgPixels,
+        tranformedPoint.y / osmdUnitInSvgPixels
+    );
+}
+
+function moveCursorToTimestamp(targetTimestamp) {
+    const wasPlaying = time.playTimeout !== null;
+
+    if (wasPlaying)
+        stopPlay();
+
+    osmd.cursor.reset();
+    stats.currentPosition = 0;
+
+    while (!osmd.cursor.iterator.EndReached) {
+        const currentTimestamp = osmd.cursor.iterator.CurrentSourceTimestamp;
+        if (currentTimestamp.realValue >= targetTimestamp.realValue)
+            break;
+        
+        osmd.cursor.next();
+        stats.currentPosition++;
+    }
+
+    osmd.cursor.show();
+    updateStatistics();
+
+    if (wasPlaying) {
+        startPlay();
+    }
+}
+
+function handleScoreClick(event) {
+    const svg = event.currentTarget;
+
+    const clickPosition = clientToOsmdCoordinates(svg, event.clientX, event.clientY);
+
+    const maxClickDistance = new opensheetmusicdisplay.PointF2D(3, 3);
+
+    const graphicalNote = osmd.GraphicSheet.GetNearestNote(clickPosition, maxClickDistance);
+    if (!graphicalNote)
+        return;
+
+    const targetTimestamp = graphicalNote.sourceNote.getAbsoluteTimestamp();
+
+    moveCursorToTimestamp(targetTimestamp);
+}
+
+export function enableNoteClickNavigation() {
+    const svg = elements.scoreDiv.querySelector("svg");
+
+    if (!svg) {
+        console.warn("No se encontró el SVG de la partitura");
+        return;
+    }
+
+    svg.addEventListener("click", handleScoreClick);
 }
 
 // Prueba estilos de cursores

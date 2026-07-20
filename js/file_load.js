@@ -1,6 +1,7 @@
 import { osmd, elements, stats, time } from "./script.js";
 import { showPlayer, showUpload, preventDefaultDragBehaviour } from "./ui_state.js";
 import { countCursorPositions, updateStatistics } from "./statistics.js";
+import { enableNoteClickNavigation } from "./cursor.js";
 
 function isMusicXmlFile(file) {
     const filename = file.name.toLowerCase();
@@ -76,14 +77,15 @@ export async function loadScore(file) {
 
     await osmd.load(xml);
     await osmd.render();
-
+    
     osmd.cursor.show();
     osmd.cursor.reset();
     // styleOsmdCursorAsLine(); // Si se quiere modificar el estilo
-
+    
     stats.currentPosition = 0;
     stats.totalPositions = countCursorPositions();
-
+    
+    enableNoteClickNavigation();
     updateStatistics();
 
     elements.prevButton.disabled = false;
