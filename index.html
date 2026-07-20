@@ -35,16 +35,18 @@
 
             <section id="player-section" class="player-section" hidden>
                 <div class="controls">
+                    <button id="open-file-button" class="secondary-button">Open another file</button>
+                    
                     <button id="prev-button" disabled>Previous</button>
                     <button id="next-button" disabled>Next</button>
-                    <button id="play-button" disabled>Play</button>
+                    <button id="play-button" class="primary-button" disabled>Play</button>
                     <button id="stop-button" disabled>Stop</button>
 
-                    <label class="tempo-control">
-                        Tempo:
+                    <div class="tempo-control">
+                        <span class="tempo-label">Tempo</span>
                         <input id="tempo-slider" type="range" min="40" max="220" step="1" value="120" disabled />
                         <span id="tempo-value">120 BPM</span>
-                    </label>
+                    </div>
                 </div>
 
                 <div id="score"></div>

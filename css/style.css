@@ -25,6 +25,8 @@
     --surface: #ffffff;
     --primary: #5182ea;
     --primary-hover: #355ecf;
+    --secondary: #7da2f0;
+    --secondary-hover: #4370dd;
     --text: #172033;
     --text-muted: #64748b;
     --border: #dbe3ee;
@@ -76,7 +78,7 @@ body {
     margin: 0 auto;
 }
 
-.upload-section {
+#upload-section {
     min-height: calc(100vh - 120px);
 
     display: flex;
@@ -252,15 +254,138 @@ button:disabled {
     cursor: not-allowed;
 }
 
-#play-button {
+.primary-button {
     color: var(--surface);
     background: var(--primary);
     border-color: var(--primary);
 }
 
-#play-button:hover:not(:disabled) {
+.primary-button:hover:not(:disabled) {
     background: var(--primary-hover);
     border-color: var(--primary-hover);
+}
+
+.secondary-button {
+    color: var(--surface);
+    background: var(--secondary);
+    border-color: var(--secondary);
+}
+
+.secondary-button:hover:not(:disabled) {
+    background: var(--secondary-hover);
+    border-color: var(--secondary-hover);
+}
+
+#open-file-button {
+    margin-right: auto; /*keep this button to the left and the others to the right*/
+}
+
+.tempo-control {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.tempo-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+/* remove browser appearance */
+#tempo-slider {
+    width: 180px;
+
+    appearance: none;
+    -webkit-appearance: none;
+
+    background: transparent;
+
+    cursor: pointer;
+
+    --progress: 45%;
+}
+
+/* track style (Chrome/Edge/Safari) */
+#tempo-slider::-webkit-slider-runnable-track {
+    height: 6px;
+
+    border-radius: 999px;
+
+    background: linear-gradient(
+        to right,
+        var(--primary) 0%,
+        var(--primary) var(--progress),
+        var(--background) var(--progress),
+        var(--background) 100%
+    );
+}
+
+/* track style (Firefox) */
+#tempo-slider::-moz-range-track {
+    height: 6px;
+
+    border-radius: 999px;
+
+    background: linear-gradient(
+        to right,
+        var(--primary) 0%,
+        var(--primary) var(--progress),
+        var(--background) var(--progress),
+        var(--background) 100%
+    );
+}
+
+/* thumb style (Chrome/Edge/Safari) */
+#tempo-slider::-webkit-slider-thumb {
+    appearance: none;
+
+    width: 18px;
+    height: 18px;
+
+    margin-top: -6px;
+
+    border-radius: 50%;
+    border: none;
+
+    background: var(--primary);
+
+    transition: transform .15s,
+                box-shadow .15s;
+}
+
+/* thumb style (Firefox) */
+#tempo-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+
+    margin-top: -6px;
+
+    border-radius: 50%;
+    border: none;
+
+    background: var(--primary);
+
+    transition: transform .15s,
+                box-shadow .15s;
+}
+
+#tempo-slider:hover::-webkit-slider-thumb {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 6px rgba(37, 99, 235, .12);
+}
+
+#tempo-slider:hover::-moz-range-thumb {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 6px rgba(37, 99, 235, .12);
+}
+
+#tempo-value {
+    width: 72px;
+
+    text-align: right;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums; /*all numbers take the same width*/
 }
 
 #score {
@@ -272,4 +397,8 @@ button:disabled {
     border-radius: 12px;
 
     overflow-x: auto;
+}
+
+[hidden] {
+    display: none !important;
 }

@@ -1,5 +1,6 @@
 // import { styleOsmdCursorAsLine, styleOsmdCursorAsBand } from "./cursor_style.js";
 import { initializeFileLoader } from "./file_load.js";
+import { updateTempoSliderProgress } from "./slider_style.js";
 
 // HTML elements
 const fileInput = document.getElementById("file-input");
@@ -10,6 +11,7 @@ const playerSection = document.getElementById("player-section");
 
 const scoreDiv = document.getElementById("score");
 
+const openFileButton = document.getElementById("open-file-button");
 const prevButton = document.getElementById("prev-button");
 const nextButton = document.getElementById("next-button");
 const playButton = document.getElementById("play-button");
@@ -31,10 +33,12 @@ const fileLoader = initializeFileLoader({
     uploadSection,
     playerSection,
     onFileSelected: async (file) => {
-        console.log("file: ", file);
         await loadScore(file, playTimeout);
     }
 })
+
+// Initialize slider track
+updateTempoSliderProgress(tempoSlider);
 
 // OSMD doc: https://github.com/opensheetmusicdisplay/opensheetmusicdisplay/wiki/Getting-Started
 const osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(scoreDiv);
@@ -46,6 +50,8 @@ osmd.setOptions({
 });
 
 // Event listeners
+
+openFileButton.addEventListener("click", resetPlayer);
 
 nextButton.addEventListener("click", () => {
     // console.log("Cursor next");
@@ -70,6 +76,8 @@ tempoSlider.addEventListener("input", () => {
 
     tempoBpm = Number(tempoSlider.value);
     tempoValue.textContent = `${tempoBpm} BPM`;
+
+    updateTempoSliderProgress(tempoSlider);
 
     if (wasPlaying) {
         stopPlay();
@@ -205,4 +213,21 @@ function getCurrentNoteDuration() {
 function stopPlay() {
     clearTimeout(playTimeout); // cancel pending timeout
     playTimeout = null;
+}
+
+function resetPlayer() {
+    clearTimeout(playTimeout);
+    playTimeout = null;
+
+    osmd.cursor.hide();
+
+    scoreDiv.innerHTML = "";
+
+    prevButton.disabled = true;
+    nextButton.disabled = true;
+    playButton.disabled = true;
+    stopButton.disabled = true;
+    tempoSlider.disabled = true;
+
+    fileLoader.showUpload();
 }

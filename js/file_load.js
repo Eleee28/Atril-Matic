@@ -6,7 +6,7 @@ function isMusicXmlFile(file) {
     return (filename.endsWith(".xml") || filename.endsWith(".musicxml"));
 }
 
-async function processFile(file, onFileSelected, uploadSection, playerSection) {
+async function processFile(file, onFileSelected, uploadSection, playerSection, fileInput) {
     if (!file)
         return;
     if (!isMusicXmlFile(file)) {
@@ -19,7 +19,9 @@ async function processFile(file, onFileSelected, uploadSection, playerSection) {
     try {
         await onFileSelected(file);
     } catch (err) {
-        showUpload(uploadSection, playerSection);
+        console.error("Error loading MusicXML: ", error);
+        showUpload(uploadSection, playerSection, fileInput);
+        alert("No se ha podido cargar la partitura");
         throw err;
     }
 }
@@ -66,6 +68,6 @@ export function initializeFileLoader({
 
     return { 
         showPlayer: () => showPlayer(uploadSection, playerSection),
-        showUpload: () => showUpload(uploadSection, playerSection),
+        showUpload: () => showUpload(uploadSection, playerSection, fileInput),
     };
 }

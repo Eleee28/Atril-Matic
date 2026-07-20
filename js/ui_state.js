@@ -3,9 +3,11 @@ export function showPlayer(uploadSection, playerSection) {
     playerSection.hidden = false;
 }
 
-export function showUpload(uploadSection, playerSection) {
+export function showUpload(uploadSection, playerSection, fileInput) {
     uploadSection.hidden = false;
     playerSection.hidden = true;
+
+    fileInput.value = "";
 }
 
 export function preventDefaultDragBehaviour(event) {
