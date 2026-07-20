@@ -1,13 +1,20 @@
-// import { styleOsmdCursorAsLine, styleOsmdCursorAsBand } from "./cursor_style";
+// import { styleOsmdCursorAsLine, styleOsmdCursorAsBand } from "./cursor_style.js";
+import { initializeFileLoader } from "./file_load.js";
 
 // HTML elements
 const fileInput = document.getElementById("file-input");
+const dropZone = document.getElementById("drop-zone");
+
+const uploadSection = document.getElementById("upload-section");
+const playerSection = document.getElementById("player-section");
+
 const scoreDiv = document.getElementById("score");
 
 const prevButton = document.getElementById("prev-button");
 const nextButton = document.getElementById("next-button");
 const playButton = document.getElementById("play-button");
 const stopButton = document.getElementById("stop-button");
+
 const tempoSlider = document.getElementById("tempo-slider");
 const tempoValue = document.getElementById("tempo-value");
 
@@ -16,6 +23,18 @@ const tempoValue = document.getElementById("tempo-value");
 // - be able to cancel the next cursor advance
 let playTimeout = null; // no timeout
 let tempoBpm = 120;
+
+// Initialize file loader
+const fileLoader = initializeFileLoader({
+    fileInput,
+    dropZone,
+    uploadSection,
+    playerSection,
+    onFileSelected: async (file) => {
+        console.log("file: ", file);
+        await loadScore(file, playTimeout);
+    }
+})
 
 // OSMD doc: https://github.com/opensheetmusicdisplay/opensheetmusicdisplay/wiki/Getting-Started
 const osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(scoreDiv);
@@ -27,29 +46,6 @@ osmd.setOptions({
 });
 
 // Event listeners
-
-fileInput.addEventListener("change", async (event) => {
-    clearTimeout(playTimeout);
-    playTimeout = null;
-
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const xml = await file.text();
-
-    await osmd.load(xml);
-    await osmd.render();
-
-    osmd.cursor.show();
-    osmd.cursor.reset();
-    // styleOsmdCursorAsLine(); // Si se quiere modificar el estilo
-
-    prevButton.disabled = false;
-    nextButton.disabled = false;
-    playButton.disabled = false;
-    stopButton.disabled = false;
-    tempoSlider.disabled = false;
-});
 
 nextButton.addEventListener("click", () => {
     // console.log("Cursor next");
@@ -80,6 +76,26 @@ tempoSlider.addEventListener("input", () => {
         startPlay();
     }
 });
+
+async function loadScore(file) {
+    clearTimeout(playTimeout);
+    playTimeout = null;
+
+    const xml = await file.text();
+
+    await osmd.load(xml);
+    await osmd.render();
+
+    osmd.cursor.show();
+    osmd.cursor.reset();
+    // styleOsmdCursorAsLine(); // Si se quiere modificar el estilo
+
+    prevButton.disabled = false;
+    nextButton.disabled = false;
+    playButton.disabled = false;
+    stopButton.disabled = false;
+    tempoSlider.disabled = false;
+}
 
 function startPlay() {
     if (playTimeout !== null) return; // alerady playing

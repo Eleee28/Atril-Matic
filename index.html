@@ -10,24 +10,46 @@
     </head>
 
     <body>
-        <h1>MusicXML POC</h1>
+        <header class="app-header">
+            <h1>MusicXML POC</h1>
+        </header>
 
-        <input id="file-input" type="file" accept=".xml, .musicxml" />
-        
-        <div class="controls">
-            <button id="prev-button" disabled>Previous</button>
-            <button id="next-button" disabled>Next</button>
-            <button id="play-button" disabled>Play</button>
-            <button id="stop-button" disabled>Stop</button>
+        <main class="app">
+            <section id="upload-section">
+                <label id="drop-zone" class="drop-zone" for="file-input">
+                    <input id="file-input" type="file" accept=".xml, .musicxml" hidden/> <!-- cuando haya OMR aceptar pdf tambien -->
+                    
+                    <div class="upload-icon" aria-hidden="true">♪</div>
 
-            <label>
-                Tempo:
-                <input id="tempo-slider" type="range" min="40" max="220" step="1" value="120" disabled />
-                <span id="tempo-value">120 BPM</span>
-            </label>
-        </div>
+                    <h2>Abre una partitura</h2>
 
-        <div id="score"></div>
+                    <p>Arrastra aquí un archivo MusicXML o seleccionalo desde tu dispositivo</p>
+
+                    <span class="select-file-button">
+                        Seleccionar archivo
+                    </span>
+
+                    <small>Formatos admitidos: .xml y .musicxml</small>
+                </label>
+            </section>
+
+            <section id="player-section" class="player-section" hidden>
+                <div class="controls">
+                    <button id="prev-button" disabled>Previous</button>
+                    <button id="next-button" disabled>Next</button>
+                    <button id="play-button" disabled>Play</button>
+                    <button id="stop-button" disabled>Stop</button>
+
+                    <label class="tempo-control">
+                        Tempo:
+                        <input id="tempo-slider" type="range" min="40" max="220" step="1" value="120" disabled />
+                        <span id="tempo-value">120 BPM</span>
+                    </label>
+                </div>
+
+                <div id="score"></div>
+            </section>
+        </main>
 
         <script type="module" src="./js/script.js"></script>
     </body>
