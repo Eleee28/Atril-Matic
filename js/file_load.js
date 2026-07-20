@@ -1,4 +1,6 @@
+import { osmd, elements, stats, time } from "./script.js";
 import { showPlayer, showUpload, preventDefaultDragBehaviour } from "./ui_state.js";
+import { countCursorPositions, updateStatistics } from "./statistics.js";
 
 function isMusicXmlFile(file) {
     const filename = file.name.toLowerCase();
@@ -6,7 +8,7 @@ function isMusicXmlFile(file) {
     return (filename.endsWith(".xml") || filename.endsWith(".musicxml"));
 }
 
-async function processFile(file, onFileSelected, uploadSection, playerSection, fileInput) {
+async function processFile(file, onFileSelected) {
     if (!file)
         return;
     if (!isMusicXmlFile(file)) {
@@ -14,60 +16,79 @@ async function processFile(file, onFileSelected, uploadSection, playerSection, f
         return;
     }
 
-    showPlayer(uploadSection, playerSection);
+    showPlayer();
 
     try {
         await onFileSelected(file);
-    } catch (err) {
+    } catch (error) {
         console.error("Error loading MusicXML: ", error);
-        showUpload(uploadSection, playerSection, fileInput);
+        showUpload();
         alert("No se ha podido cargar la partitura");
-        throw err;
+        throw error;
     }
 }
 
-export function initializeFileLoader({
-    fileInput,
-    dropZone,
-    uploadSection,
-    playerSection,
-    onFileSelected
-}) {
-    fileInput.addEventListener("change", async (event) => {
-        await processFile(event.target.files[0], onFileSelected, uploadSection, playerSection);
+export function initializeFileLoader({onFileSelected}) {
+    elements.fileInput.addEventListener("change", async (event) => {
+        await processFile(event.target.files[0], onFileSelected);
     });
 
     // Avoid the browser open the file if droped outside the dropZone
     document.addEventListener("dragover", preventDefaultDragBehaviour);
     document.addEventListener("drop", preventDefaultDragBehaviour);
 
-    dropZone.addEventListener("dragenter", (event) => {
+    elements.dropZone.addEventListener("dragenter", (event) => {
         preventDefaultDragBehaviour(event);
-        dropZone.classList.add("is-dragging");
+        elements.dropZone.classList.add("is-dragging");
     });
 
-    dropZone.addEventListener("dragover", (event) => {
+    elements.dropZone.addEventListener("dragover", (event) => {
         preventDefaultDragBehaviour(event);
-        dropZone.classList.add("is-dragging");
+        elements.dropZone.classList.add("is-dragging");
     });
 
-    dropZone.addEventListener("dragleave", (event) => {
+    elements.dropZone.addEventListener("dragleave", (event) => {
         preventDefaultDragBehaviour(event);
 
         // Avoid removing the style when going over childs of dropZone
-        if (!dropZone.contains(event.relatedTarget))
-            dropZone.classList.remove("is-dragging");
+        if (!elements.dropZone.contains(event.relatedTarget))
+            elements.dropZone.classList.remove("is-dragging");
     });
 
-    dropZone.addEventListener("drop", async (event) => {
+    elements.dropZone.addEventListener("drop", async (event) => {
         preventDefaultDragBehaviour(event);
-        dropZone.classList.remove("is-dragging");
+        elements.dropZone.classList.remove("is-dragging");
 
-        await processFile(event.dataTransfer.files[0], onFileSelected, uploadSection, playerSection)
+        await processFile(event.dataTransfer.files[0], onFileSelected)
     });
 
     return { 
-        showPlayer: () => showPlayer(uploadSection, playerSection),
-        showUpload: () => showUpload(uploadSection, playerSection, fileInput),
+        showPlayer: () => showPlayer(),
+        showUpload: () => showUpload(),
     };
+}
+
+export async function loadScore(file) {
+    clearTimeout(time.playTimeout);
+    time.playTimeout = null;
+
+    const xml = await file.text();
+
+    await osmd.load(xml);
+    await osmd.render();
+
+    osmd.cursor.show();
+    osmd.cursor.reset();
+    // styleOsmdCursorAsLine(); // Si se quiere modificar el estilo
+
+    stats.currentPosition = 0;
+    stats.totalPositions = countCursorPositions();
+
+    updateStatistics();
+
+    elements.prevButton.disabled = false;
+    elements.nextButton.disabled = false;
+    elements.playButton.disabled = false;
+    elements.stopButton.disabled = false;
+    elements.tempoSlider.disabled = false;
 }

@@ -1,9 +1,11 @@
-export function updateTempoSliderProgress(tempoSlider) {
-    const min = Number(tempoSlider.min);
-    const max = Number(tempoSlider.max);
-    const value = Number(tempoSlider.value);
+import { elements } from "./script.js";
+
+export function updateTempoSliderProgress() {
+    const min = Number(elements.tempoSlider.min);
+    const max = Number(elements.tempoSlider.max);
+    const value = Number(elements.tempoSlider.value);
 
     const percentage = ((value - min) / (max - min)) * 100;
 
-    tempoSlider.style.setProperty("--progress", `${percentage}%`)
+    elements.tempoSlider.style.setProperty("--progress", `${percentage}%`)
 }

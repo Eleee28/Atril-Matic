@@ -1,13 +1,15 @@
-export function showPlayer(uploadSection, playerSection) {
-    uploadSection.hidden = true;
-    playerSection.hidden = false;
+import { elements } from "./script.js";
+
+export function showPlayer() {
+    elements.uploadSection.hidden = true;
+    elements.playerSection.hidden = false;
 }
 
-export function showUpload(uploadSection, playerSection, fileInput) {
-    uploadSection.hidden = false;
-    playerSection.hidden = true;
+export function showUpload() {
+    elements.uploadSection.hidden = false;
+    elements.playerSection.hidden = true;
 
-    fileInput.value = "";
+    elements.fileInput.value = "";
 }
 
 export function preventDefaultDragBehaviour(event) {
