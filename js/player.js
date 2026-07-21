@@ -35,7 +35,6 @@ function scheduleNextCursorMove() {
 
 // Calculate the duration of the actual note
 function getCurrentCursorDurationMs() {
-
     const quarterNoteMs = 60000 / time.tempoBpm; // duration of a quarter note (negra) in relation to the tempo
 
     const currentIterator = osmd.cursor.iterator;
@@ -52,20 +51,19 @@ function getCurrentCursorDurationMs() {
     // Same as osmd.cursor.next()
     nextIterator.moveToNextVisibleVoiceEntry(false);
 
+    const nextTime = nextIterator.currentTimeStamp?.realValue;
+
     let durationInWholeNotes;
 
-    if (!nextIterator.EndReached) { // Not the end of music sheet
-        const nextTime = nextIterator.currentTimeStamp?.realValue;
+    const isNormalForwardMovement = !nextIterator.EndReached && 
+        typeof nextTime === "number" && nextTime > currentTime;
 
-        if (typeof nextTime === "number" || nextTime > currentTime)
-            durationInWholeNotes = nextTime - currentTime;
-    }
+    if (isNormalForwardMovement) // Moves forward
+        durationInWholeNotes = nextTime - currentTime;
+    else // End of music sheet or jump backwards (barras de repeticion)
+        durationInWholeNotes = getCurrentNoteDuration(); // get real note duration from Note.realValue
     
-    // If there are no more notes, get real note duration from Note.realValue
-    if (typeof durationInWholeNotes !== "number")
-        durationInWholeNotes = getCurrentNoteDuration();
-
-    if (typeof durationInWholeNotes !== "number") // In case of error
+    if (typeof durationInWholeNotes !== "number" || durationInWholeNotes <= 0) // In case of error
         return quarterNoteMs;
 
     // RealValue is expressed using a whole note as reference, obtain how many quarters it represents
