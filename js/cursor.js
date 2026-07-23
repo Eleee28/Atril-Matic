@@ -2,6 +2,25 @@ import { startPlay, stopPlay } from "./player.js";
 import { elements, osmd, stats, time } from "./script.js";
 import { updateStatistics } from "./statistics.js";
 
+// https://github.com/opensheetmusicdisplay/opensheetmusicdisplay/blob/master/src/OpenSheetMusicDisplay/OSMDOptions.ts
+export const cursorConfig = {
+    /**
+     * Type of cursor:
+     * 0: Standard highlighting current notes
+     * 1: Thin line left to the current notes
+     * 2: Short thin line on top of stave and left to the current notes
+     * 3: Current measure
+     * 4: Current measure to left of current notes
+     */
+    type: 2,
+    /** Color to draw the cursor */
+    color: "#5182ea",
+    /** alpha value to be used with color (0.0 transparent, 0.5 medium, 1.0 opaque). */
+    alpha: 0.35,
+    /** If true, this cursor will be followed (for scroll). */
+    follow: true,
+};
+
 export function moveCursorNext() {
     if (osmd.cursor.iterator.EndReached)
         return false;

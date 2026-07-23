@@ -1,8 +1,8 @@
 // import { styleOsmdCursorAsLine, styleOsmdCursorAsBand } from "./cursor_style.js";
-import { moveCursorNext, moveCursorPrevious } from "./cursor.js";
+import { cursorConfig, moveCursorNext, moveCursorPrevious } from "./cursor.js";
 import { initializeFileLoader, loadScore } from "./file_load.js";
 import { updateTempoSliderProgress } from "./slider_style.js";
-import { countCursorPositions, updateStatistics } from "./statistics.js";
+import { updateStatistics } from "./statistics.js";
 import { startPlay, stopPlay, resetPlayer } from "./player.js";
 
 // HTML elements
@@ -59,6 +59,15 @@ export const osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(elements.sco
 osmd.setOptions({
     backend: "svg",
     drawTitle: true,
+	followCursor: true,
+	cursorOptions: [
+		{
+			type: cursorConfig.type,
+			color: cursorConfig.color,
+			alpha: cursorConfig.alpha,
+			follow: cursorConfig.follow,
+		},
+	],
     // drawingParameters: "compacttight" // don't display title, composer etc., smaller margins
 });
 
@@ -97,4 +106,9 @@ elements.tempoSlider.addEventListener("input", () => {
         stopPlay();
         startPlay();
     }
+});
+
+document.addEventListener("keydown", (event) => {
+	if (event.key === "Escape")
+		stopPlay();
 });
