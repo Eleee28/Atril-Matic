@@ -17,7 +17,7 @@
         <main class="app">
             <section id="upload-section">
                 <label id="drop-zone" class="drop-zone" for="file-input">
-                    <input id="file-input" type="file" accept=".xml, .musicxml" hidden/> <!-- cuando haya OMR aceptar pdf tambien -->
+                    <input id="file-input" type="file" accept=".xml, .musicxml, .mxl, .pdf, application/pdf" hidden/>
                     
                     <div class="upload-icon" aria-hidden="true">♪</div>
 
@@ -30,6 +30,8 @@
                     </span>
 
                     <small>Formatos admitidos: .xml y .musicxml</small>
+
+					<p id="loading-message" hidden></p>
                 </label>
             </section>
 
@@ -70,6 +72,7 @@
             </section>
         </main>
 
+		<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
         <script type="module" src="./js/script.js"></script>
     </body>
 </html>

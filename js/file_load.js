@@ -2,39 +2,71 @@ import { osmd, elements, stats, time } from "./script.js";
 import { showPlayer, showUpload, preventDefaultDragBehaviour } from "./ui_state.js";
 import { countCursorPositions, updateStatistics } from "./statistics.js";
 import { enableNoteClickNavigation } from "./cursor.js";
+import { convertPdfToMusicXml } from "./audiforge.js";
+import { showLoadingMessage, hideLoadingMessage } from "./loading_msg.js";
 
-function isMusicXmlFile(file) {
-    const filename = file.name.toLowerCase();
-
-    return (filename.endsWith(".xml") || filename.endsWith(".musicxml"));
+function supportedExtension(extension) {
+	const extensions = ["xml", "musicxml", "pdf", "mxl"]
+    return (extensions.includes(extension));
 }
 
-async function processFile(file, onFileSelected) {
-    if (!file)
-        return;
-    if (!isMusicXmlFile(file)) {
-        alert("Selecciona un archivo .xml o .musicxml");
+function getFileExtension(filename) {
+	return filename.split(".").pop().toLowerCase();
+}
+
+async function loadFile(file, onFileSelected) {
+	if (!file)
+		return;
+
+	const extension = getFileExtension(file.name);
+	if (!supportedExtension(extension)) {
+        alert("Archivo no soportado. Selecciona un archivo PDF, XML, MusicXML o MXL");
         return;
     }
+	let musicxml = null;
 
-    showPlayer();
+	if (extension === "pdf") {
+		showLoadingMessage("Converting PDF to MusicXML...");
 
-    try {
-        await onFileSelected(file);
-    } catch (error) {
-        console.error("Error loading MusicXML: ", error);
-        showUpload();
-        alert("No se ha podido cargar la partitura");
-        throw error;
-    }
+		try {
+			musicxml = await convertPdfToMusicXml(file);
+		} finally {
+			hideLoadingMessage();
+		}
+	}
+	else if (extension === "xml" || extension === "musicxml")
+		musicxml = await file.text();
+	else if (extension === "mxl")
+		musicxml = file;
+
+	if (musicxml) {
+		showPlayer();
+
+		try {
+			await onFileSelected(musicxml);
+		} catch (error) {
+			console.error("Error loading MusicXML: ", error);
+			showUpload();
+			alert("No se ha podido cargar la partitura");
+			throw error;
+		}
+	}
 }
 
 export function initializeFileLoader({onFileSelected}) {
     elements.fileInput.addEventListener("change", async (event) => {
-        await processFile(event.target.files[0], onFileSelected);
+		const file = event.target.files[0];
+
+		try {
+			await loadFile(file, onFileSelected);
+		} catch (error) {
+			console.error("Could not load score: ", error);
+		} finally {
+			elements.fileInput.value = "";
+		}
     });
 
-    // Avoid the browser open the file if droped outside the dropZone
+    // Avoid the browser open the file if dropped outside the dropZone
     document.addEventListener("dragover", preventDefaultDragBehaviour);
     document.addEventListener("drop", preventDefaultDragBehaviour);
 
@@ -60,7 +92,15 @@ export function initializeFileLoader({onFileSelected}) {
         preventDefaultDragBehaviour(event);
         elements.dropZone.classList.remove("is-dragging");
 
-        await processFile(event.dataTransfer.files[0], onFileSelected)
+		const file = event.dataTransfer.files[0];
+
+		try {
+			await loadFile(file, onFileSelected);
+		} catch (error) {
+			console.error("Could not load score: ", error);
+		} finally {
+			elements.fileInput.value = "";
+		}
     });
 
     return { 
@@ -69,18 +109,16 @@ export function initializeFileLoader({onFileSelected}) {
     };
 }
 
-export async function loadScore(file) {
+export async function loadScore(scoreData) {
     clearTimeout(time.playTimeout);
     time.playTimeout = null;
 
-    const xml = await file.text();
 
-    await osmd.load(xml);
+    await osmd.load(scoreData);
     await osmd.render();
     
     osmd.cursor.show();
     osmd.cursor.reset();
-    // styleOsmdCursorAsLine(); // Si se quiere modificar el estilo
     
     stats.currentPosition = 0;
     stats.totalPositions = countCursorPositions();
