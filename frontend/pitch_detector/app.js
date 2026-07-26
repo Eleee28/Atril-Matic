@@ -1,4 +1,4 @@
- import init, { AudioProcessor } from '../pkg/audio_processor_node_prototype.js';
+import init, { AudioProcessor } from '../wasm/audio_processor.js';
 
         let detector = null;
         let audioContext = null;

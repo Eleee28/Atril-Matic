@@ -2,7 +2,7 @@ Vas a necesitar cargo, rust rustc i despues installar wasm-pack con:
 cargo install wasm-pack
 
 los builds estan en pkg se compila con:
-wasm-pack build --target web
+wasm-pack build --target web --out-dir ../frontend/wasm
 
 
 Js lo puede importar como

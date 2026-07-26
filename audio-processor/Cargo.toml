@@ -1,5 +1,5 @@
 [package]
-name = "audio-processor-node-prototype"
+name = "audio-processor"
 version = "0.1.0"
 authors = ["TimotyEnder <61980517+TimotyEnder@users.noreply.github.com>"]
 edition = "2018"
