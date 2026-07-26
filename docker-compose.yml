@@ -13,7 +13,7 @@ services:
       - ./conf/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - audiforge
-  
+
   audiforge:
     image: nirmata1/audiforge:latest
     container_name: audiforge

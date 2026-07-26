@@ -1,0 +1,13 @@
+Vas a necesitar cargo, rust rustc i despues installar wasm-pack con:
+cargo install wasm-pack
+
+los builds estan en pkg se compila con:
+wasm-pack build --target web
+
+
+Js lo puede importar como
+En www/app.js:1:
+import init, { AudioProcessor } from '../pkg/audio_processor_node_prototype.js';
+- init — loads the .wasm binary
+- AudioProcessor — the Rust struct exposed via #[wasm_bindgen]
+The flow is: app.js calls await init() which fetches ../pkg/audio_processor_node_prototype_bg.wasm, then creates an AudioProcessor instance and calls .detect_pitch() on it.
