@@ -11,7 +11,7 @@ export async function convertPdfToMusicXml(pdfFile) {
 	return downloadMusicXml(conversionId);
 }
 
-async function uploadPdf(pdfFile) {
+export async function uploadPdf(pdfFile) {
 	const formData = new FormData();
 	formData.append("file", pdfFile);
 
@@ -54,7 +54,7 @@ async function waitForConversion(conversionId) {
 	}
 }
 
-async function getConversionStatus(conversionId) {
+export async function getConversionStatus(conversionId) {
 	const response = await fetch(`${AUDIFORGE_API_URL}/status/${encodeURIComponent(conversionId)}`);
 
 	if (!response.ok) {
@@ -65,7 +65,7 @@ async function getConversionStatus(conversionId) {
 	return response.json();
 }
 
-async function downloadMusicXml(conversionId) {
+export async function downloadMusicXml(conversionId) {
 	const response = await fetch(`${AUDIFORGE_API_URL}/download/${encodeURIComponent(conversionId)}`);
 
 	if (!response.ok) {
@@ -85,12 +85,12 @@ async function downloadMusicXml(conversionId) {
 	return extractMusicXmlFromMxl(mxlBlob);
 }
 
-async function extractMusicXmlFromMxl(mxlBlob) {
+export async function extractMusicXmlFromMxl(mxlBlob) {
 	const mxlZip = await JSZip.loadAsync(mxlBlob);
 
 	const containerFile = mxlZip.file("META-INF/container.xml");
 	if (!containerFile)
-		throw new Error("MXL file does not container META-INF/container.xml");
+		throw new Error("MXL file does not contain META-INF/container.xml");
 
 	const containerXml = await containerFile.async("text");
 	
