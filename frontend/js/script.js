@@ -1,9 +1,4 @@
-// import { styleOsmdCursorAsLine, styleOsmdCursorAsBand } from "./cursor_style.js";
-import { cursorConfig, moveCursorNext, moveCursorPrevious } from "./cursor.js";
-import { initializeFileLoader, loadScore } from "./file_load.js";
-import { updateTempoSliderProgress } from "./slider_style.js";
-import { updateStatistics } from "./statistics.js";
-import { startPlay, stopPlay, resetPlayer } from "./player.js";
+import { init } from "./init.js";
 
 // HTML elements
 
@@ -43,72 +38,4 @@ export const stats = {
     totalPositions: 0,
 };
 
-// Initialize file loader
-export const fileLoader = initializeFileLoader({
-    onFileSelected: async (file) => {
-        await loadScore(file);
-    }
-})
-
-// Initialize slider track
-updateTempoSliderProgress(elements.tempoSlider);
-
-// OSMD doc: https://github.com/opensheetmusicdisplay/opensheetmusicdisplay/wiki/Getting-Started
-export const osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(elements.scoreDiv);
-
-osmd.setOptions({
-    backend: "svg",
-    drawTitle: true,
-	followCursor: true,
-	cursorOptions: [
-		{
-			type: cursorConfig.type,
-			color: cursorConfig.color,
-			alpha: cursorConfig.alpha,
-			follow: cursorConfig.follow,
-		},
-	],
-    // drawingParameters: "compacttight" // don't display title, composer etc., smaller margins
-});
-
-// Event listeners
-
-elements.openFileButton.addEventListener("click", resetPlayer);
-
-elements.nextButton.addEventListener("click", () => {
-    // console.log("Cursor next");
-    moveCursorNext();
-});
-
-elements.prevButton.addEventListener("click", () => {
-    // console.log("Cursor prev");
-    moveCursorPrevious();
-});
-
-elements.playButton.addEventListener("click", () => {
-    startPlay();
-});
-
-elements.stopButton.addEventListener("click", () => {
-    stopPlay();
-});
-
-elements.tempoSlider.addEventListener("input", () => {
-    const wasPlaying = time.playTimeout !== null; // Avoid playing when tempo is modified if it was stopped
-
-    time.tempoBpm = Number(elements.tempoSlider.value);
-    elements.tempoValue.textContent = `${time.tempoBpm} BPM`;
-
-    updateTempoSliderProgress();
-    updateStatistics();
-
-    if (wasPlaying) {
-        stopPlay();
-        startPlay();
-    }
-});
-
-document.addEventListener("keydown", (event) => {
-	if (event.key === "Escape")
-		stopPlay();
-});
+init();
