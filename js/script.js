@@ -1,5 +1,4 @@
-// import { styleOsmdCursorAsLine, styleOsmdCursorAsBand } from "./cursor_style.js";
-import { cursorConfig, moveCursorNext, moveCursorPrevious } from "./cursor.js";
+import { cursorsConfig, moveCursorNext, moveCursorPrevious } from "./cursor.js";
 import { initializeFileLoader, loadScore } from "./file_load.js";
 import { updateTempoSliderProgress } from "./slider_style.js";
 import { updateStatistics } from "./statistics.js";
@@ -54,20 +53,11 @@ export const fileLoader = initializeFileLoader({
 updateTempoSliderProgress(elements.tempoSlider);
 
 // OSMD doc: https://github.com/opensheetmusicdisplay/opensheetmusicdisplay/wiki/Getting-Started
-export const osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(elements.scoreDiv);
-
-osmd.setOptions({
-    backend: "svg",
+export const osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(elements.scoreDiv, {
+	backend: "svg",
     drawTitle: true,
 	followCursor: true,
-	cursorOptions: [
-		{
-			type: cursorConfig.type,
-			color: cursorConfig.color,
-			alpha: cursorConfig.alpha,
-			follow: cursorConfig.follow,
-		},
-	],
+	cursorsOptions: cursorsConfig,
     // drawingParameters: "compacttight" // don't display title, composer etc., smaller margins
 });
 
