@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>MusicXML POC</title>
+
+        <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@2.0.0/build/opensheetmusicdisplay.min.js"></script>
+        <link rel="stylesheet" href="./css/style.css" />
+
+    </head>
+
+    <body>
+        <header class="app-header">
+            <h1>MusicXML POC</h1>
+        </header>
+
+        <main class="app">
+            <section id="upload-section">
+                <label id="drop-zone" class="drop-zone" for="file-input">
+                    <input id="file-input" type="file" accept=".xml, .musicxml, .mxl, .pdf, application/pdf" hidden/>
+                    
+                    <div class="upload-icon" aria-hidden="true">♪</div>
+
+                    <h2>Abre una partitura</h2>
+
+                    <p>Arrastra aquí un archivo MusicXML o seleccionalo desde tu dispositivo</p>
+
+                    <span class="select-file-button">
+                        Seleccionar archivo
+                    </span>
+
+                    <small>Formatos admitidos: .xml y .musicxml</small>
+
+					<p id="loading-message" hidden></p>
+                </label>
+            </section>
+
+            <section id="player-section" class="player-section" hidden>
+                <div class="controls">
+                    <button id="open-file-button" class="secondary-button">Open another file</button>
+                    
+                    <button id="prev-button" disabled>Previous</button>
+                    <button id="next-button" disabled>Next</button>
+                    <button id="play-button" class="primary-button" disabled>Play</button>
+                    <button id="stop-button" disabled>Stop</button>
+
+                    <div class="tempo-control">
+                        <span class="tempo-label">Tempo</span>
+                        <input id="tempo-slider" type="range" min="40" max="220" step="1" value="120" disabled />
+                        <span id="tempo-value">120 BPM</span>
+                    </div>
+                </div>
+
+                <div id="score"></div>
+
+                <div class="statistics">
+                    <span>
+                        Posición:
+                        <strong id="position-stat">0 / 0</strong>
+                    </span>
+
+                    <span>
+                        Compás:
+                        <strong id="measure-stat">-</strong>
+                    </span>
+
+                    <span>
+                        Tempo:
+                        <strong id="tempo-stat">120 BPM</strong>
+                    </span>
+                </div>
+            </section>
+        </main>
+
+		<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+        <script type="module" src="./js/script.js"></script>
+    </body>
+</html>

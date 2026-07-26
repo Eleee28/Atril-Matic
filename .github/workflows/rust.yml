@@ -1,0 +1,47 @@
+name: Rust / WebAssembly CI
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - ".github/workflows/rust.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/rust.yml"
+
+jobs:
+  test:
+    name: Test and Check
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: audio-processor
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable # https://github.com/dtolnay/rust-toolchain
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2 # https://github.com/swatinem/rust-cache
+
+      - name: Install wasm-pack
+        run: cargo install wasm-pack
+
+      - name: Check project
+        run: cargo check
+
+      - name: Check WebAssembly target
+        run: cargo check --target wasm32-unknown-unknown
+
+      - name: Run tests
+        run: cargo test --locked
+
+      - name: Build WebAssembly
+        run: wasm-pack build

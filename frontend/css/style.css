@@ -1,0 +1,417 @@
+/* :root {
+    --background: #1161c8;
+    --surface: #df2222;
+    --primary: #25eb2f;
+    --primary-hover: #0d5b27;
+    --text: #edc72d;
+    --text-muted: #ffcd04;
+    --border: #bd20b8;
+} */
+
+/* Azul */
+/* :root {
+    --background: #f3f6fa;
+    --surface: #ffffff;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --text: #172033;
+    --text-muted: #64748b;
+    --border: #dbe3ee;
+} */
+
+/* Azul v2 */
+:root {
+    --background: #f3f6fa;
+    --surface: #ffffff;
+    --primary: #5182ea;
+    --primary-hover: #355ecf;
+    --secondary: #7da2f0;
+    --secondary-hover: #4370dd;
+    --text: #172033;
+    --text-muted: #64748b;
+    --border: #dbe3ee;
+}
+
+/* Marfil y verde oscuro */
+/* :root {
+    --background: #f6f4ee;
+    --surface: #fffefa;
+    --primary: #285943;
+    --primary-hover: #1f4635;
+    --text: #242724;
+    --text-muted: #707770;
+    --border: #dddcd4;
+} */
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 32px;
+
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+    color: var(--text);
+    background: var(--background);
+}
+
+.app-header {
+    padding: 24px 32px;
+}
+
+.app-header h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+}
+
+.app {
+    width: min(1400px, calc(100% - 48px));
+    margin: 0 auto;
+}
+
+#upload-section {
+    min-height: calc(100vh - 120px);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding-bottom: 48px;
+}
+
+.drop-zone {
+    width: min(680px, 100%);
+    min-height: 390px;
+    padding: 48px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+
+    text-align: center;
+
+    background: var(--surface);
+    border: 2px dashed var(--border);
+    border-radius: 20px;
+
+    cursor: pointer;
+
+    transition: border-color 0.2s,
+                background-color 0.2s,
+                box-shadow 0.2s,
+                transform 0.2s;
+}
+
+.drop-zone:hover {
+    border-color: var(--primary);
+    background: var(--border);
+    box-shadow: 0 16px 40px rgba(37, 99, 235, 0.08);
+    transform: translateY(-2px);
+}
+
+.upload-icon {
+    width: 72px;
+    height: 72px;
+    margin-bottom: 8px;
+
+    display: grid;
+    place-items: center;
+
+    color: var(--primary);
+    background: var(--background);
+    border-radius: 20px;
+
+    font-size: 38px;
+    font-weight: 600;
+}
+
+.drop-zone h2 {
+    margin: 0;
+
+    color: var(--text);
+    font-size: 24px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+}
+
+.drop-zone p {
+    max-width: 440px;
+    margin: 0 0 12px;
+
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.drop-zone small {
+    margin-top: 4px;
+
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.select-file-button {
+    padding: 11px 18px;
+
+    color: var(--surface);
+    background: var(--primary);
+    border-radius: 9px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition: background-color 0.2s,
+                box-shadow 0.2s;
+}
+
+.drop-zone:hover .select-file-button {
+    background: var(--primary-hover);
+    box-shadow: 0 5px 14px rgba(37, 99, 235, 0.2);
+}
+
+.drop-zone.is-dragging {
+    border-color: var(--primary);
+    background: var(--background);
+    box-shadow: 0 16px 40px rgba(37, 99, 235, 0.12);
+    transform: scale(1.01);
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    margin: 20px 0;
+    padding: 16px;
+
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.controls label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    margin-left: 8px;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+#tempo-value {
+    min-width: 68px;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+button {
+    padding: 10px 18px;
+
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+
+    color: var(--text);
+    background-color: var(--surface);
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    cursor: pointer;
+    transition: background 0.2s,
+                border-color 0.2s,
+                color 0.2s,
+                box-shadow 0.2s,
+                transform 0.05s;
+}
+
+button:hover:not(:disabled) {
+    background: var(--border);
+    border-color: var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+
+button:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.primary-button {
+    color: var(--surface);
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.primary-button:hover:not(:disabled) {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.secondary-button {
+    color: var(--surface);
+    background: var(--secondary);
+    border-color: var(--secondary);
+}
+
+.secondary-button:hover:not(:disabled) {
+    background: var(--secondary-hover);
+    border-color: var(--secondary-hover);
+}
+
+#open-file-button {
+    margin-right: auto; /*keep this button to the left and the others to the right*/
+}
+
+.tempo-control {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.tempo-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+/* remove browser appearance */
+#tempo-slider {
+    width: 180px;
+
+    appearance: none;
+    -webkit-appearance: none;
+
+    background: transparent;
+
+    cursor: pointer;
+
+    --progress: 45%;
+}
+
+/* track style (Chrome/Edge/Safari) */
+#tempo-slider::-webkit-slider-runnable-track {
+    height: 6px;
+
+    border-radius: 999px;
+
+    background: linear-gradient(
+        to right,
+        var(--primary) 0%,
+        var(--primary) var(--progress),
+        var(--background) var(--progress),
+        var(--background) 100%
+    );
+}
+
+/* track style (Firefox) */
+#tempo-slider::-moz-range-track {
+    height: 6px;
+
+    border-radius: 999px;
+
+    background: linear-gradient(
+        to right,
+        var(--primary) 0%,
+        var(--primary) var(--progress),
+        var(--background) var(--progress),
+        var(--background) 100%
+    );
+}
+
+/* thumb style (Chrome/Edge/Safari) */
+#tempo-slider::-webkit-slider-thumb {
+    appearance: none;
+
+    width: 18px;
+    height: 18px;
+
+    margin-top: -6px;
+
+    border-radius: 50%;
+    border: none;
+
+    background: var(--primary);
+
+    transition: transform .15s,
+                box-shadow .15s;
+}
+
+/* thumb style (Firefox) */
+#tempo-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+
+    margin-top: -6px;
+
+    border-radius: 50%;
+    border: none;
+
+    background: var(--primary);
+
+    transition: transform .15s,
+                box-shadow .15s;
+}
+
+#tempo-slider:hover::-webkit-slider-thumb {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 6px rgba(37, 99, 235, .12);
+}
+
+#tempo-slider:hover::-moz-range-thumb {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 6px rgba(37, 99, 235, .12);
+}
+
+#tempo-value {
+    width: 72px;
+
+    text-align: right;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums; /*all numbers take the same width*/
+}
+
+#score {
+    min-height: 300px;
+    padding: 32px;
+
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+
+    overflow-x: auto;
+}
+
+.statistics {
+    display: flex;
+    gap: 24px;
+    margin: 16px 0;
+    padding: 12px 16px;
+    background: var(--background);
+    border-radius: 8px;
+}
+
+.statistics span {
+    white-space: nowrap;
+}
+
+[hidden] {
+    display: none !important;
+}
