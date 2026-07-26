@@ -113,12 +113,16 @@ export async function loadScore(scoreData) {
     clearTimeout(time.playTimeout);
     time.playTimeout = null;
 
-
     await osmd.load(scoreData);
     await osmd.render();
-    
-    osmd.cursor.show();
-    osmd.cursor.reset();
+
+	// Forces the load of custom cursors
+	osmd.enableOrDisableCursors(true);
+
+	osmd.cursors.forEach((cursor) => {
+		cursor.show();
+		cursor.reset();
+	});
     
     stats.currentPosition = 0;
     stats.totalPositions = countCursorPositions();
@@ -126,9 +130,25 @@ export async function loadScore(scoreData) {
     enableNoteClickNavigation();
     updateStatistics();
 
+	// Just to test -- remove
+	moveCursorRandomly(osmd.cursors[1], stats.totalPositions);
+	moveCursorRandomly(osmd.cursors[2], stats.totalPositions);
+
     elements.prevButton.disabled = false;
     elements.nextButton.disabled = false;
     elements.playButton.disabled = false;
     elements.stopButton.disabled = false;
     elements.tempoSlider.disabled = false;
+}
+
+function moveCursorRandomly(cursor, totalPositions) {
+	cursor.reset();
+
+	const steps = Math.floor(Math.random() * totalPositions);
+
+	for (let i = 0; i < steps && !cursor.Iterator.EndReached; i++) {
+		cursor.next();
+	}
+
+	cursor.show();
 }

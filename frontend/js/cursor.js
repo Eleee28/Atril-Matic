@@ -21,6 +21,33 @@ export const cursorConfig = {
     follow: true,
 };
 
+export const cursorsConfig = [
+	{
+		type: 0,
+		color: "#2563eb",
+		alpha: 0.9,
+		follow: true,
+	},
+	{
+		type: 0,
+		color: "#2563eb",
+		alpha: 0.70,
+		follow: true,
+	},
+	{
+		type: 4,
+		color: "#2563eb",
+		alpha: 0.55,
+		follow: true,
+	},
+	{
+		type: 3,
+		color: "#2563eb",
+		alpha: 0.25,
+		follow: true,
+	},
+];
+
 export function moveCursorNext() {
     if (osmd.cursor.iterator.EndReached)
         return false;
