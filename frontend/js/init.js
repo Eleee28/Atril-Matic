@@ -6,7 +6,7 @@ import { startPlay, stopPlay, resetPlayer } from "./player.js";
 export let fileLoader;
 export let osmd;
 
-export function init() {
+export function init(elements) {
 	// Initialize file loader
 	fileLoader = initializeFileLoader({
 		onFileSelected: async (file) => {
@@ -40,7 +40,7 @@ export function init() {
 
 	elements.tempoSlider.addEventListener("input", onTempoChanged);
 
-	document.addEventListener("click", onKeyDown);
+	document.addEventListener("keydown", onKeyDown);
 }
 
 function onKeyDown() {

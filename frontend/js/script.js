@@ -38,4 +38,4 @@ export const stats = {
     totalPositions: 0,
 };
 
-init();
+init(elements);
