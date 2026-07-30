@@ -23,5 +23,3 @@ down:
 	docker compose down
 
 .PHONY: wasm test check clean up down dev
-
-

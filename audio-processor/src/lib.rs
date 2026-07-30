@@ -158,7 +158,7 @@ impl AudioProcessor {
         }
 
         let midi_note = 12.0 * (frequency / 440.0).log2() + 69.0;
-        let midi_rounded = (midi_note + 0.5).round() as i32;
+        let midi_rounded = midi_note.round() as i32;
         let octave = (midi_rounded / 12) - 1;
         let note_index = ((midi_rounded % 12) + 12) % 12;
 
