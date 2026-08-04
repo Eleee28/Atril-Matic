@@ -16,15 +16,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch_depth: 0
 
       - name: Detect relevant changes
         id: changes
         uses: dorny/paths-filter@v3
         with:
           filters: |
-            rust::
+            rust:
               - "backend/**"
               - ".github/workflows/rust.yml"
 
