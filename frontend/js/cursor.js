@@ -1,6 +1,9 @@
+import { osmd } from "./init.js";
 import { startPlay, stopPlay } from "./player.js";
-import { elements, osmd, stats, time } from "./script.js";
+import { elements, stats, time } from "./script.js";
 import { updateStatistics } from "./statistics.js";
+
+const MAX_CURSORS = 4;
 
 // https://github.com/opensheetmusicdisplay/opensheetmusicdisplay/blob/master/src/OpenSheetMusicDisplay/OSMDOptions.ts
 export const cursorConfig = {
@@ -20,6 +23,13 @@ export const cursorConfig = {
     /** If true, this cursor will be followed (for scroll). */
     follow: true,
 };
+
+export const cursorsConfig = Array.from({ length: MAX_CURSORS }, () => ({
+	type: 0,
+	color: "#5182ea",
+	alpha: 1,
+	follow: false
+}));
 
 export function moveCursorNext() {
     if (osmd.cursor.iterator.EndReached)

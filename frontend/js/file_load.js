@@ -1,4 +1,5 @@
-import { osmd, elements, stats, time } from "./script.js";
+import { osmd } from "./init.js";
+import { elements, stats, time } from "./script.js";
 import { showPlayer, showUpload, preventDefaultDragBehaviour } from "./ui_state.js";
 import { countCursorPositions, updateStatistics } from "./statistics.js";
 import { enableNoteClickNavigation } from "./cursor.js";
@@ -112,7 +113,6 @@ export function initializeFileLoader({onFileSelected}) {
 export async function loadScore(scoreData) {
     clearTimeout(time.playTimeout);
     time.playTimeout = null;
-
 
     await osmd.load(scoreData);
     await osmd.render();

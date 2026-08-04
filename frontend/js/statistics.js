@@ -1,4 +1,5 @@
-import { osmd, elements, time, stats } from "./script.js";
+import { osmd } from "./init.js";
+import { elements, time, stats } from "./script.js";
 
 export function countCursorPositions() {
     const iterator = osmd.cursor.iterator.clone();
