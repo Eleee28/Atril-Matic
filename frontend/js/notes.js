@@ -47,27 +47,44 @@ function buildNotesArray(sheet) {
 }
 
 function pitchToString(pitch) {
-	const noteNames = [
-		"C",
-		"D",
-		"E",
-		"F",
-		"G",
-		"A",
-		"B"
-	];
-
-	const accidentalNames = {
-		[-2]: "bb",
-		[-1]: "b",
-		[0]: "",
-		[1]: "#",
-		[2]: "##"
+	const noteMap = {
+		0: "C", // Do
+		2: "D", // Re
+		4: "E", // Mi
+		5: "F", // Fa
+		7: "G", // Sol
+		9: "A", // La
+		11: "B" // Si
 	};
 
-	const noteName = noteNames[pitch.fundamentalNote];
+	const accidentalNames = {
+		5: "bb", // Doubleflat (doble bemol)
+		1: "b", // Flat (bemol)
+		3: "", // Natural (becuadro) same as none
+		2: "", // None
+		0: "#", // Sharp (sostenido)
+		4: "##" // Doublesharp (doble sostenido)
+	};
+
+	const octaves = {
+		[-3]: 0,
+		[-2]: 1,
+		[-1]: 2,
+		[0]: 3,
+		[1]: 4,
+		[2]: 5,
+		[3]: 6,
+		[4]: 7,
+		[5]: 8,
+		[6]: 9
+	};
+
+	const noteName = noteMap[pitch.fundamentalNote];
 	const accidental = accidentalNames[pitch.accidental] ?? "";
-	const octave = pitch.octave;
+	const octave = octaves[pitch.octave];
+
+	// console.log("pitch: ", pitch); // DEBUG
+	// console.log("note: ", noteName);
 
 	return `${noteName}${accidental}${octave}`;
 }
