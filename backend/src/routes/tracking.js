@@ -50,7 +50,7 @@ function validateNotes(notes) {
 		const note = notes[i];
 		if (!note || typeof note !== "object")
 			return `Note at index ${i} must be an object`;
-		if (typeof note.note !== "string" || !/^[A-G][#b]?-?\d+$/.test(note.note)) // change this i dont like using regex
+		if (typeof note.note !== "string" || !/^[A-G](?:#{1,2}|b{1,2})?\d+$/.test(note.note)) // Use regex to check valid note format
 			return `Note at index ${i} has an invalid note value`;
 		if (typeof note.start !== "number" || !Number.isFinite(note.start) || note.start < 0)
 			return `Note at index ${i} has an invalid start`;
