@@ -5,6 +5,7 @@ import { countCursorPositions, updateStatistics } from "./statistics.js";
 import { enableNoteClickNavigation } from "./cursor.js";
 import { convertPdfToMusicXml } from "./audiforge.js";
 import { showLoadingMessage, hideLoadingMessage } from "./loading_msg.js";
+import { initNotes } from "./notes.js";
 
 function supportedExtension(extension) {
 	const extensions = ["xml", "musicxml", "pdf", "mxl"]
@@ -115,6 +116,9 @@ export async function loadScore(scoreData) {
     time.playTimeout = null;
 
     await osmd.load(scoreData);
+	
+	await initNotes(osmd.sheet);
+
     await osmd.render();
     
     osmd.cursor.show();
