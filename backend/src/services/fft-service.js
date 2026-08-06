@@ -17,7 +17,7 @@ class FftService {
 	}
 
 	setNotes(notes) {
-		// TODO
+		this.audioProcessor.add_track_json(JSON.stringify(notes));
 	}
 
 	processAudio(samples) {
