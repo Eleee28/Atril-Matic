@@ -1,6 +1,9 @@
+import { osmd } from "./init.js";
 import { startPlay, stopPlay } from "./player.js";
-import { elements, osmd, stats, time } from "./script.js";
+import { elements, stats, time } from "./script.js";
 import { updateStatistics } from "./statistics.js";
+
+const MAX_CURSORS = 4;
 
 // https://github.com/opensheetmusicdisplay/opensheetmusicdisplay/blob/master/src/OpenSheetMusicDisplay/OSMDOptions.ts
 export const cursorConfig = {
@@ -21,6 +24,13 @@ export const cursorConfig = {
     follow: true,
 };
 
+export const cursorsConfig = Array.from({ length: MAX_CURSORS }, () => ({
+	type: 0,
+	color: "#5182ea",
+	alpha: 1,
+	follow: false
+}));
+
 export function moveCursorNext() {
     if (osmd.cursor.iterator.EndReached)
         return false;
@@ -30,7 +40,6 @@ export function moveCursorNext() {
     if (stats.currentPosition < stats.totalPositions - 1)
         stats.currentPosition++;
 
-    // styleOsmdCursorAsBand();
     updateStatistics();
 
     return true;
@@ -43,7 +52,6 @@ export function moveCursorPrevious() {
     osmd.cursor.previous();
     stats.currentPosition--;
 
-    // styleOsmdCursorAsBand();
     updateStatistics();
 
     return true;
@@ -116,33 +124,4 @@ export function enableNoteClickNavigation() {
     }
 
     svg.addEventListener("click", handleScoreClick);
-}
-
-// Prueba estilos de cursores
-export function styleOsmdCursorAsLine() {
-    const cursorElement = document.getElementById("cursorImg-0");
-
-    if (!cursorElement) {
-        console.warn("Cursor not found");
-        return;
-    }
-
-    cursorElement.style.backgroundColor = "#0066ff"
-    cursorElement.style.width = "3px";
-    cursorElement.style.opacity = "1";
-    cursorElement.style.borderRadius = "2px";
-}
-
-export function styleOsmdCursorAsBand() {
-    const cursorElement = document.getElementById("cursorImg-0");
-
-    if (!cursorElement) {
-        console.warn("Cursor not found");
-        return;
-    }
-
-    cursorElement.style.backgroundColor = "#0066ff"
-    cursorElement.style.width = "18px";
-    cursorElement.style.opacity = "1";
-    cursorElement.style.borderRadius = "6px";
 }
