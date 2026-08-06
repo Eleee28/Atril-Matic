@@ -2,13 +2,13 @@ name: Rust / WebAssembly CI
 
 on:
   push:
-    paths:
-      - "backend/**"
-      - ".github/workflows/rust.yml"
+    branches:
+      - main
   pull_request:
-    paths:
-      - "backend/**"
-      - ".github/workflows/rust.yml"
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
   test:
@@ -23,25 +23,45 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Detect relevant changes
+        id: changes
+        uses: dorny/paths-filter@v4 # https://github.com/dorny/paths-filter
+        with:
+          filters: |
+            rust:
+              - "audio-processor/**"
+              - ".github/workflows/rust.yml"
+
+      - name: Skip CI (no Rust changes)
+        if: steps.changes.outputs.rust != 'true'
+        run: echo "No Rust-related changes detected. Skipping CI."
+
       - name: Install Rust (stable)
+        if: steps.changes.outputs.rust == 'true'
         uses: dtolnay/rust-toolchain@stable # https://github.com/dtolnay/rust-toolchain
         with:
           targets: wasm32-unknown-unknown
 
       - name: Cache Cargo
+        if: steps.changes.outputs.rust == 'true'
         uses: Swatinem/rust-cache@v2 # https://github.com/swatinem/rust-cache
 
       - name: Install wasm-pack
+        if: steps.changes.outputs.rust == 'true'
         run: cargo install wasm-pack
 
       - name: Check project
+        if: steps.changes.outputs.rust == 'true'
         run: cargo check
 
       - name: Check WebAssembly target
+        if: steps.changes.outputs.rust == 'true'
         run: cargo check --target wasm32-unknown-unknown
 
       - name: Run tests
+        if: steps.changes.outputs.rust == 'true'
         run: cargo test --locked
 
       - name: Build WebAssembly
+        if: steps.changes.outputs.rust == 'true'
         run: wasm-pack build

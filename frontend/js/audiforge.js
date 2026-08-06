@@ -90,7 +90,7 @@ async function extractMusicXmlFromMxl(mxlBlob) {
 
 	const containerFile = mxlZip.file("META-INF/container.xml");
 	if (!containerFile)
-		throw new Error("MXL file does not container META-INF/container.xml");
+		throw new Error("MXL file does not contain META-INF/container.xml");
 
 	const containerXml = await containerFile.async("text");
 	

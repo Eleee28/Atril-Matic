@@ -1,8 +1,9 @@
-import { osmd, elements, time, fileLoader } from "./script.js";
+import { osmd, fileLoader } from "./init.js";
+import { elements, time } from "./script.js";
 import { moveCursorNext } from "./cursor.js";
 
 export function startPlay() {
-    if (time.playTimeout !== null) return; // alerady playing
+    if (time.playTimeout !== null) return; // already playing
 
     scheduleNextCursorMove();
 }
