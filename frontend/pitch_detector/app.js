@@ -8,14 +8,12 @@ import init, { AudioProcessor } from '../wasm/audio_processor.js';
 
         // Constants
         const FFT_SIZE = 2048;
-        const SAMPLE_RATE = 10000;
 
         async function setup() {
             await init();
-            detector = AudioProcessor.new(SAMPLE_RATE, FFT_SIZE);
 
-            // Setup audio
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            detector = AudioProcessor.new(audioContext.sampleRate, FFT_SIZE);
             analyser = audioContext.createAnalyser();
             analyser.fftSize = FFT_SIZE;
 
