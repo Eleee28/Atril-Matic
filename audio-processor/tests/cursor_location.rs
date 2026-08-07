@@ -41,7 +41,7 @@ fn cursor_location_matches_played_note_position() {
     };
 
     let mut processor = AudioProcessor::new(SAMPLE_RATE, FFT_SIZE);
-    processor.add_track_to_notetrack(vec![filler, target]);
+    processor.add_track_json(vec![filler, target]);
 
     // The A4 run starts at the first feature slice where the filler note
     // no longer overlaps: 1000ms / TIME_SEGMENT_DURATION_MS + 1. Computed with

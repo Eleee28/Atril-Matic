@@ -28,6 +28,7 @@ impl AudioProcessor {
             note_track: NoteTrack::new(),
         }
     }
+	
 	pub fn add_track_json(&mut self, notes_json: &str) -> Result<(), JsValue> {
 		log(&format!("Received JSON: {}", notes_json)); // DEBUG
 
