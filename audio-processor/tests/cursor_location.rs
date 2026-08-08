@@ -35,18 +35,51 @@ fn cursor_location_matches_played_note_position() {
 
     let mic_data = sine_bytes(a4_freq, 0.7, FFT_SIZE);
 
-    // Every call points at the start of the A4 run: the free-start DTW lets the
-    // whole rolling query collapse onto the first slice that matches.
-    assert_eq!(
-        processor.cursor_location_from_mic_input(&mic_data),
-        Some(expected_start)
+    // First call: free-start acquisition locks onto the start of the A4 run.
+    let first = processor.cursor_location_from_mic_input(&mic_data);
+    assert_eq!(first, Some(expected_start));
+
+    // Following calls: tracking advances monotonically while the same note
+    // keeps being sung, and never falls back behind the lock point.
+    let second = processor.cursor_location_from_mic_input(&mic_data).unwrap();
+    let third = processor.cursor_location_from_mic_input(&mic_data).unwrap();
+    assert!(second > expected_start, "tracking must advance past the lock point");
+    assert!(third > second, "tracking must keep advancing");
+    assert!(third < 3000, "cursor must stay inside the A4 run");
+}
+
+#[test]
+fn repeated_notes_advance_monotonically() {
+    // 4 identical B4 notes, each 250 ms (16ths at 120 BPM): the case that used
+    // to pin the cursor to the first note forever.
+    let b4 = note(NoteValue::B, 4);
+    let track: Vec<SheetNote> = (0..4)
+        .map(|i| SheetNote {
+            note: b4,
+            start_time_ms: i * 250,
+            end_time_ms: (i + 1) * 250,
+        })
+        .collect();
+
+    let mut processor = AudioProcessor::new(SAMPLE_RATE, FFT_SIZE);
+    processor.add_track(track);
+
+    // B4 tuned to land on FFT bin 21 (21 * 48000 / 2048 = 492.1875 Hz).
+    let b4_freq = 21.0 * SAMPLE_RATE / FFT_SIZE as f64;
+    let mic_data = sine_bytes(b4_freq, 0.7, FFT_SIZE);
+
+    let positions: Vec<u32> = (0..8)
+        .filter_map(|_| processor.cursor_location_from_mic_input(&mic_data))
+        .collect();
+
+    assert_eq!(positions.len(), 8, "every fed slice must produce a position");
+    assert!(
+        positions.windows(2).all(|w| w[1] > w[0]),
+        "position must advance monotonically: {:?}",
+        positions
     );
-    assert_eq!(
-        processor.cursor_location_from_mic_input(&mic_data),
-        Some(expected_start)
-    );
-    assert_eq!(
-        processor.cursor_location_from_mic_input(&mic_data),
-        Some(expected_start)
+    assert!(
+        positions.last().unwrap() > &positions[0],
+        "cursor must move, not stay pinned to the first note"
     );
 }
