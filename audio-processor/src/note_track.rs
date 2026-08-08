@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use crate::utils::{Note, SheetNote};
-pub static TIME_SEGMENT_DURATION_MS: f32 = 2048.0 / 48000.0;
+pub static TIME_SEGMENT_DURATION_MS: f32 = 2048.0 / 48000.0 * 1000.0;
 const QUERY_CAPACITY: usize = 50; // ~2 s of slices
 const WINDOW_HALF: usize = 75; // ref window ±3 s around last position
 const ACCEPT_THRESHOLD: f64 = 1.0; // avg cost/slice; calibrated in tests
@@ -86,7 +86,7 @@ impl NoteTrack {
         let j = Self::dtw(&self.query, &self.features[lo..hi])?;
         let abs = lo + j;
         self.last_position = Some(abs);
-        Some(abs as u32)
+        Some((abs as f32 * TIME_SEGMENT_DURATION_MS) as u32)
     }
     pub fn note_at_time_ms(&self, time_ms: u32) -> Option<&SheetNote> {
         self.notes_track

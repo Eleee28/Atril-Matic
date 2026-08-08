@@ -24,6 +24,7 @@ class FftService {
 		const audioData = Uint8Array.from(samples);
 
 		const cursorTimestamp = this.audioProcessor.cursor_location_from_mic_input(audioData);
+		console.log("cursorTimestamp fft service: ", cursorTimestamp);
 		if (cursorTimestamp === undefined || cursorTimestamp === null) {
 			return [];
 		}

@@ -28,13 +28,17 @@ impl AudioProcessor {
             note_track: NoteTrack::new(),
         }
     }
+
+	pub fn add_track(&mut self, track: Vec<SheetNote>) {
+		self.note_track.add_track(&track);
+	}
 	
-	pub fn add_track_json(&mut self, notes_json: &str) -> Result<(), JsValue> {
-		log(&format!("Received JSON: {}", notes_json)); // DEBUG
+	pub fn add_track_json(&mut self, notes_json: &str) -> Result<(), String> {
+		// log(&format!("Received JSON: {}", notes_json)); // DEBUG
 
-		let input_notes: Vec<InputSheetNote> = serde_json::from_str(notes_json).map_err(|error| JsValue::from_str(&error.to_string()))?;
+		let input_notes: Vec<InputSheetNote> = serde_json::from_str(notes_json).map_err(|error| error.to_string())?;
 
-		let track: Result<Vec<SheetNote>, JsValue> = input_notes.into_iter().map(|input_note| {
+		let track: Result<Vec<SheetNote>, String> = input_notes.into_iter().map(|input_note| {
 			let note = parse_note_name(&input_note.note)?;
 
 			Ok(SheetNote {
@@ -52,29 +56,52 @@ impl AudioProcessor {
 
 		self.note_track.add_track(&track?);
 		Ok(())
-
 	}
 
     pub fn cursor_location_from_mic_input(&mut self, data: &[u8]) -> Option<u32> {
+		log(&format!("Samples received: {}", data.len())); // DEBUG
+
         let note = self.pitch_detector.detect_pitch(data);
+
+		match note.note_value { // DEBUG
+			Some(note_value) => {
+				log(&format!("Detected note: {:?}{}", note_value, note.octave));
+			}
+			None => {
+				log("No note detected");
+			}
+		}
+
         let slice = match note.note_value {
             Some(_) => vec![note],
             None => Vec::new(),
         };
         self.note_track.push_query_slice(slice);
-        self.note_track.match_position()
+
+		let position = self.note_track.match_position();
+
+		match position { // DEBUG
+			Some(timestamp) => {
+				log(&format!("Matched cursor timestamp: {}", timestamp));
+			}
+			None => {
+				log("No cursor match found");
+			}
+		}
+
+		position
     }
 }
 
-fn parse_note_name(note_name: &str) -> Result<crate::utils::Note, JsValue> {
+fn parse_note_name(note_name: &str) -> Result<crate::utils::Note, String> {
 	if note_name.len() < 2 {
-		return Err(JsValue::from_str("Invalid note name"));
+		return Err("Invalid note name".to_string());
 	}
 
 	let octave_start = note_name.find(|character: char| {
 		character.is_ascii_digit() || character == '-'
 	})
-	.ok_or_else(|| JsValue::from_str("Note octave is missing"))?;
+	.ok_or_else(|| "Note octave is missing".to_string())?;
 
 	let (note_part, octave_part) = note_name.split_at(octave_start);
 
@@ -92,13 +119,13 @@ fn parse_note_name(note_name: &str) -> Result<crate::utils::Note, JsValue> {
 		"A#" | "Bb" | "Cbb" => crate::utils::NoteValue::ASharp,
 		"A##" | "B" | "Cb" => crate::utils::NoteValue::B,
 		_ => {
-			return Err(JsValue::from_str(
-				&format!("Invalid note value: {}", note_part),
-			));
+			return Err(
+				format!("Invalid note value: {}", note_part),
+			);
 		}
 	};
 
-	let octave = octave_part.parse::<i32>().map_err(|_| JsValue::from_str("Invalid note octave"))?;
+	let octave = octave_part.parse::<i32>().map_err(|_| "Invalid note octave".to_string())?;
 
 	Ok(crate::utils::Note {
 		note_value: Some(note_value),
@@ -106,8 +133,14 @@ fn parse_note_name(note_name: &str) -> Result<crate::utils::Note, JsValue> {
 	})
 }
 
+#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn log(s: &str) {
+	println!("{s}");
 }
