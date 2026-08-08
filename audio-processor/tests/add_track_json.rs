@@ -1,10 +1,11 @@
 //! Native (non-wasm) test for AudioProcessor's json to SheetNote conversion.
 //! Run with: cargo test --test add_track_json
+//! Run with to show debug logs: cargo test --test add_track_json -- --nocapture
+
+mod common;
 
 use audio_processor::AudioProcessor;
-
-const SAMPLE_RATE: f64 = 48_000.0;
-const FFT_SIZE: usize = 2048;
+use common::{sine_bytes, FFT_SIZE, SAMPLE_RATE};
 
 #[test]
 fn add_track_json_accepts_valid_notes() {
@@ -76,9 +77,11 @@ fn cursor_location_works_with_json_track() {
     let mut processor = AudioProcessor::new(SAMPLE_RATE, FFT_SIZE);
     processor.add_track_json(json).unwrap();
 
-    let expected_start = (1000.0f32 / ((FFT_SIZE)f32 / (SAMPLE_RATE)f32)) as u32 + 1;
+    let expected_start = (24.0 * (FFT_SIZE as f32 / SAMPLE_RATE as f32) * 1000.0) as u32 + 1;
 
     let mic_data = sine_bytes(a4_freq, 0.7, FFT_SIZE);    
 
+	// dbg!(processor.cursor_location_from_mic_input(&mic_data));
+	// dbg!(expected_start);
     assert_eq!(processor.cursor_location_from_mic_input(&mic_data), Some(expected_start));
 }
