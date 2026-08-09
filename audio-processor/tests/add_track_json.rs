@@ -79,9 +79,12 @@ fn cursor_location_works_with_json_track() {
 
     let expected_start = (24.0 * (FFT_SIZE as f32 / SAMPLE_RATE as f32) * 1000.0) as u32 + 1;
 
-    let mic_data = sine_bytes(a4_freq, 0.7, FFT_SIZE);    
+    let mic_data = sine_bytes(a4_freq, 0.7, FFT_SIZE);
 
-	// dbg!(processor.cursor_location_from_mic_input(&mic_data));
-	// dbg!(expected_start);
-    assert_eq!(processor.cursor_location_from_mic_input(&mic_data), Some(expected_start));
+    // dbg!(processor.cursor_location_from_mic_input(&mic_data));
+    // dbg!(expected_start);
+    assert_eq!(
+        processor.cursor_location_from_mic_input(&mic_data),
+        Some(expected_start)
+    );
 }

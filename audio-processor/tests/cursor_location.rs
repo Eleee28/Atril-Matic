@@ -5,7 +5,7 @@ mod common;
 
 use audio_processor::AudioProcessor;
 use audio_processor::utils::{NoteValue, SheetNote};
-use common::{note, sine_bytes, FFT_SIZE, SAMPLE_RATE};
+use common::{note, sine_bytes, sum_sine_bytes, FFT_SIZE, SAMPLE_RATE};
 
 #[test]
 fn cursor_location_matches_played_note_position() {
@@ -67,6 +67,94 @@ fn repeated_notes_advance_monotonically() {
     // B4 tuned to land on FFT bin 21 (21 * 48000 / 2048 = 492.1875 Hz).
     let b4_freq = 21.0 * SAMPLE_RATE / FFT_SIZE as f64;
     let mic_data = sine_bytes(b4_freq, 0.7, FFT_SIZE);
+
+    let positions: Vec<u32> = (0..8)
+        .filter_map(|_| processor.cursor_location_from_mic_input(&mic_data))
+        .collect();
+
+    assert_eq!(positions.len(), 8, "every fed slice must produce a position");
+    assert!(
+        positions.windows(2).all(|w| w[1] > w[0]),
+        "position must advance monotonically: {:?}",
+        positions
+    );
+    assert!(
+        positions.last().unwrap() > &positions[0],
+        "cursor must move, not stay pinned to the first note"
+    );
+}
+
+#[test]
+fn harmonic_rich_note_advances_monotonically() {
+    // Same repeated-B4 track, but the mic signal now carries the 2nd and 3rd
+    // harmonics with the 3rd harmonic (F#6, 1476 Hz) as the strongest spectral
+    // peak. Before the sub-harmonic correction this was detected as F#6
+    // (DTW cost 5.475) instead of B4, freezing the cursor forever.
+    let b4 = note(NoteValue::B, 4);
+    let track: Vec<SheetNote> = (0..4)
+        .map(|i| SheetNote {
+            note: b4,
+            start_time_ms: i * 250,
+            end_time_ms: (i + 1) * 250,
+        })
+        .collect();
+
+    let mut processor = AudioProcessor::new(SAMPLE_RATE, FFT_SIZE);
+    processor.add_track(track);
+
+    let b4_freq = 21.0 * SAMPLE_RATE / FFT_SIZE as f64; // 492.1875 Hz
+    let mic_data = sum_sine_bytes(
+        &[
+            (b4_freq, 0.45),       // fundamental
+            (2.0 * b4_freq, 0.35), // 2nd harmonic (B5)
+            (3.0 * b4_freq, 0.6),  // 3rd harmonic (F#6), strongest peak
+        ],
+        FFT_SIZE,
+    );
+
+    let positions: Vec<u32> = (0..8)
+        .filter_map(|_| processor.cursor_location_from_mic_input(&mic_data))
+        .collect();
+
+    assert_eq!(positions.len(), 8, "every fed slice must produce a position");
+    assert!(
+        positions.windows(2).all(|w| w[1] > w[0]),
+        "position must advance monotonically: {:?}",
+        positions
+    );
+    assert!(
+        positions.last().unwrap() > &positions[0],
+        "cursor must move, not stay pinned to the first note"
+    );
+}
+
+#[test]
+fn non_bin_aligned_harmonic_advances_monotonically() {
+    // Same repeated-B4 track, but the strongest spectral peak is a 1500 Hz tone
+    // that lands exactly on bin 64 (1500 / 23.4375), which is NOT divisible by
+    // 3. Before nearest-bin rounding the sub-harmonic correction skipped it
+    // (`64 % 3 != 0`) and the note was still reported as F#6.
+    let b4 = note(NoteValue::B, 4);
+    let track: Vec<SheetNote> = (0..4)
+        .map(|i| SheetNote {
+            note: b4,
+            start_time_ms: i * 250,
+            end_time_ms: (i + 1) * 250,
+        })
+        .collect();
+
+    let mut processor = AudioProcessor::new(SAMPLE_RATE, FFT_SIZE);
+    processor.add_track(track);
+
+    let b4_freq = 21.0 * SAMPLE_RATE / FFT_SIZE as f64; // 492.1875 Hz
+    let mic_data = sum_sine_bytes(
+        &[
+            (b4_freq, 0.45),       // fundamental (bin 21)
+            (2.0 * b4_freq, 0.35), // 2nd harmonic (bin 42)
+            (1500.0, 0.6),         // strongest peak, bin 64 (64 % 3 != 0)
+        ],
+        FFT_SIZE,
+    );
 
     let positions: Vec<u32> = (0..8)
         .filter_map(|_| processor.cursor_location_from_mic_input(&mic_data))

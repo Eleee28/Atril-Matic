@@ -6,6 +6,8 @@ use wasm_bindgen::prelude::*;
 
 use crate::utils::Note;
 const THRESHOLD_ACCEPT_MAG: f64 = 10.0;
+const MAX_HARMONIC_DIVISOR: usize = 4;
+const SUB_HARMONIC_THRESHOLD: f64 = 0.5;
 // Musical notes (A4 = 440Hz)
 
 #[wasm_bindgen]
@@ -116,14 +118,26 @@ impl PitchDetector {
             return (0.0, 0.0);
         }
 
-        // Octave correction: the FFT peak is often the 2nd harmonic, so the true
-        // fundamental is one octave lower. If half the peak bin also has strong
-        // energy, report that lower octave instead.
-        if max_index % 2 == 0 {
-            let sub = self.spectrum[max_index / 2].norm();
-            if sub > max_magnitude * 0.5 {
-                return (max_index as f64 / 2.0 * bin_width, sub);
+        // Sub-harmonic correction: the FFT peak is often the 2nd or 3rd harmonic
+        // of the true fundamental (e.g. guitar sustain), so the reported note can
+        // be an octave (or more) above what was actually played. If a
+        // (near-)integer sub-multiple of the peak bin also carries strong energy,
+        // report that lower bin as the fundamental instead.
+        let mut best_sub_magnitude = 0.0;
+        let mut best_sub_bin = 0usize;
+        for k in 2..=MAX_HARMONIC_DIVISOR {
+            let sub_bin = (max_index as f64 / k as f64).round() as usize;
+            if sub_bin < min_bin || sub_bin >= max_index {
+                continue;
             }
+            let sub = self.spectrum[sub_bin].norm();
+            if sub > best_sub_magnitude {
+                best_sub_magnitude = sub;
+                best_sub_bin = sub_bin;
+            }
+        }
+        if best_sub_bin > 0 && best_sub_magnitude > max_magnitude * SUB_HARMONIC_THRESHOLD {
+            return (best_sub_bin as f64 * bin_width, best_sub_magnitude);
         }
 
         (max_index as f64 * bin_width, max_magnitude)

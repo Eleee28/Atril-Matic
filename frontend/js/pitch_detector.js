@@ -1,3 +1,5 @@
+import { followTimestampMs } from "./cursor.js";
+
 let audioContext = null;
 let analyser = null;
 let isListening = false;
@@ -35,6 +37,12 @@ async function detectPitch() {
 
 	try {
 		const result = await sendAudioSamples(dataArray);
+
+		// Move the sheet cursor to the position matched by the backend
+		const cursors = result?.cursors ?? [];
+		if (cursors.length > 0 && Number.isFinite(cursors[0].timestampMs)) {
+			followTimestampMs(cursors[0].timestampMs);
+		}
 
 		// Update UI
 		if (result && result.note && result.note !== "None") {

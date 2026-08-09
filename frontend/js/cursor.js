@@ -73,30 +73,57 @@ function clientToOsmdCoordinates(svg, clientX, clientY) {
     );
 }
 
+function setCursorToRealValue(targetRealValue) {
+	osmd.cursor.reset();
+	stats.currentPosition = 0;
+
+	// Move forward only while the NEXT voice entry still starts at or before
+	// the target, so the cursor lands on the entry that contains the target
+	// time instead of jumping one entry ahead.
+	while (!osmd.cursor.iterator.EndReached) {
+		const nextIterator = osmd.cursor.iterator.clone();
+		nextIterator.moveToNextVisibleVoiceEntry(false);
+
+		if (nextIterator.EndReached)
+			break;
+
+		const nextTimestamp = nextIterator.currentTimeStamp?.realValue;
+
+		if (typeof nextTimestamp !== "number" || nextTimestamp > targetRealValue)
+			break;
+
+		osmd.cursor.next();
+		stats.currentPosition++;
+	}
+
+	osmd.cursor.show();
+	updateStatistics();
+}
+
 function moveCursorToTimestamp(targetTimestamp) {
-    const wasPlaying = time.playTimeout !== null;
+	const wasPlaying = time.playTimeout !== null;
 
-    if (wasPlaying)
-        stopPlay();
+	if (wasPlaying)
+		stopPlay();
 
-    osmd.cursor.reset();
-    stats.currentPosition = 0;
+	setCursorToRealValue(targetTimestamp.realValue);
 
-    while (!osmd.cursor.iterator.EndReached) {
-        const currentTimestamp = osmd.cursor.iterator.CurrentSourceTimestamp;
-        if (currentTimestamp.realValue >= targetTimestamp.realValue)
-            break;
-        
-        osmd.cursor.next();
-        stats.currentPosition++;
-    }
+	if (wasPlaying)
+		startPlay();
+}
 
-    osmd.cursor.show();
-    updateStatistics();
+// Move the visual cursor to the position matched by the backend's real-time
+// tracking. timestampMs is in the same units as the track sent to the backend
+// (ms), so it maps back to OSMD musical time through msPerWholeNote.
+export function followTimestampMs(timestampMs) {
+	const msPerWholeNote = time.msPerWholeNote;
 
-    if (wasPlaying) {
-        startPlay();
-    }
+	if (!msPerWholeNote)
+		return;
+
+	stopPlay(); // real-time tracking supersedes tempo-driven playback
+
+	setCursorToRealValue(timestampMs / msPerWholeNote);
 }
 
 function handleScoreClick(event) {
