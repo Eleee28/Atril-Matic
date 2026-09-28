@@ -81,7 +81,11 @@ fn recognises_notes_played_an_octave_apart() {
 
     let octaves: Vec<i32> = [11usize, 22, 45]
         .iter()
-        .map(|bin| detector.detect_pitch(&sine_bytes(bin_frequency(*bin), 0.7, FFT_SIZE)).octave)
+        .map(|bin| {
+            detector
+                .detect_pitch(&sine_bytes(bin_frequency(*bin), 0.7, FFT_SIZE))
+                .octave
+        })
         .collect();
     assert_eq!(
         octaves,
@@ -114,9 +118,9 @@ fn corrects_to_the_fundamental_when_a_harmonic_is_the_peak() {
 
     let detected = detector.detect_pitch(&sum_sine_bytes(
         &[
-            (b4, 0.45),             // fundamental (bin 21)
-            (2.0 * b4, 0.35),       // 2nd harmonic (bin 42)
-            (3.0 * b4, 0.6),        // 3rd harmonic (bin 63), strongest peak
+            (b4, 0.45),       // fundamental (bin 21)
+            (2.0 * b4, 0.35), // 2nd harmonic (bin 42)
+            (3.0 * b4, 0.6),  // 3rd harmonic (bin 63), strongest peak
         ],
         FFT_SIZE,
     ));
@@ -138,9 +142,9 @@ fn corrects_to_the_fundamental_for_a_non_divisible_peak_bin() {
 
     let detected = detector.detect_pitch(&sum_sine_bytes(
         &[
-            (b4, 0.45),        // fundamental (bin 21)
-            (2.0 * b4, 0.35),  // 2nd harmonic (bin 42)
-            (1500.0, 0.6),     // strongest peak, bin 64 (64 % 3 != 0)
+            (b4, 0.45),       // fundamental (bin 21)
+            (2.0 * b4, 0.35), // 2nd harmonic (bin 42)
+            (1500.0, 0.6),    // strongest peak, bin 64 (64 % 3 != 0)
         ],
         FFT_SIZE,
     ));

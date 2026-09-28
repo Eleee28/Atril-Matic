@@ -4,8 +4,8 @@
 
 mod common;
 
-use audio_processor::AudioProcessor;
 use audio_processor::utils::{Note, NoteValue, SheetNote};
+use audio_processor::AudioProcessor;
 use common::{note, sine_bytes, FFT_SIZE, SAMPLE_RATE};
 
 /// Frequency of FFT bin `bin`, so the test input lands on an exact FFT bin and
@@ -41,12 +41,7 @@ fn the_cursor_lands_on_the_start_of_each_played_note() {
     let mut processor = AudioProcessor::new(SAMPLE_RATE, FFT_SIZE);
     processor.add_track(four_note_track());
 
-    let played = [
-        (15usize, 0u32),
-        (19, 1000),
-        (22, 2000),
-        (28, 3000),
-    ];
+    let played = [(15usize, 0u32), (19, 1000), (22, 2000), (28, 3000)];
 
     for (bin, expected_ms) in played {
         let data = sine_bytes(bin_frequency(bin), 0.7, FFT_SIZE);

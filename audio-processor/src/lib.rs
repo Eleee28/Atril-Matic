@@ -76,31 +76,29 @@ impl AudioProcessor {
         let note = self.pitch_detector.detect_pitch(data);
 
         match note.note_value {
-            // DEBUG
             Some(note_value) => {
                 log(&format!("Detected note: {:?}{}", note_value, note.octave));
+                let note_window = NoteWindow { notes: vec![note] };
+                self.note_track.push_query_slice(note_window);
+
+                let position = self.note_track.match_position();
+                match position {
+                    Some(timestamp) => {
+                        log(&format!("Matched cursor timestamp: {}", timestamp));
+                    }
+                    None => {
+                        log("No cursor match found");
+                    }
+                }
+
+                position
             }
             None => {
                 log("No note detected");
+                self.note_track.reset_break_flag();
+                None
             }
         }
-
-        let note_window = NoteWindow { notes: vec![note] };
-        self.note_track.push_query_slice(note_window);
-
-        let position = self.note_track.match_position();
-
-        match position {
-            // DEBUG
-            Some(timestamp) => {
-                log(&format!("Matched cursor timestamp: {}", timestamp));
-            }
-            None => {
-                log("No cursor match found");
-            }
-        }
-
-        position
     }
 }
 

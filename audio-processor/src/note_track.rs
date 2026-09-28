@@ -2,7 +2,7 @@ use std::collections::{HashSet, VecDeque};
 
 use crate::log;
 
-use crate::utils::{dtw_cost, Note, SheetNote};
+use crate::utils::{Note, SheetNote};
 #[derive(Clone)]
 pub struct NoteWindow {
     pub notes: Vec<Note>,
@@ -21,6 +21,7 @@ pub struct NoteTrack {
     last_position: Option<usize>,
     query_head: usize, // first query slice not yet consumed by tracking
     frozen_count: u32, // consecutive tracking rejections
+    break_in_between_notes: bool,
 }
 impl NoteTrack {
     pub fn new() -> Self {
@@ -31,7 +32,11 @@ impl NoteTrack {
             last_position: None,
             query_head: 0,
             frozen_count: 0,
+            break_in_between_notes: false,
         }
+    }
+    pub fn reset_break_flag(&mut self) {
+        self.break_in_between_notes = true;
     }
     pub fn add_track(&mut self, track: &[SheetNote]) {
         //i assume the track is ordered by start time and is not empty
@@ -40,6 +45,7 @@ impl NoteTrack {
         self.query_head = 0;
         self.frozen_count = 0;
         self.last_position = None;
+        self.break_in_between_notes = false;
         let mut windows = Vec::<(NoteWindow, NoteTimeStamp)>::new();
         let mut break_points = HashSet::new();
         for note in track {
@@ -128,6 +134,7 @@ impl NoteTrack {
         if self.processed_track.is_empty() {
             return None;
         }
+
         let position = match self.last_position {
             None => {
                 let calc_pos = Self::dtw(&self.query, &self.processed_track)?;
@@ -140,28 +147,63 @@ impl NoteTrack {
                 if tail.is_empty() {
                     return None;
                 }
-                let mut offset_index = 0;
+                let len = self.processed_track.len();
+                let mut offset_index = 0usize;
+
                 for tail_window in tail {
-                    if position + offset_index >= self.processed_track.len() {
+                    if position + offset_index >= len {
                         break;
                     }
-                    if dtw_cost(
-                        &tail_window.notes,
-                        &self.processed_track[position + offset_index].0.notes,
-                    ) != 0.0
+
+                    // Hold while the player is still sounding a note that belongs
+                    // to the window the cursor is already on.
+                    if !self.break_in_between_notes
+                        && window_matches(
+                            &self.processed_track[position + offset_index].0.notes,
+                            &tail_window.notes,
+                        )
                     {
-                        self.frozen_count += 1;
-                        self.last_position =
-                            Some((position + offset_index + 1).min(self.processed_track.len() - 1));
-                        if self.frozen_count > MAX_NOTE_FREEZES_BEFORE_READJUSTING {
-                            self.last_position = None;
-                        }
-                        return None;
+                        self.query_head = self.query.len();
+                        self.frozen_count = 0;
+                        self.break_in_between_notes = false;
+                        return Some(
+                            self.processed_track[position + offset_index]
+                                .1
+                                .start_time_ms,
+                        );
                     }
-                    offset_index += 1;
+
+                    // The player moved on: walk forward to the next window that
+                    // actually contains the note. A pending break means the note
+                    // was re-struck after a rest, so the current window does not
+                    // count as a match.
+                    let search_from =
+                        position + offset_index + usize::from(self.break_in_between_notes);
+                    let found = (search_from..len).find(|&i| {
+                        window_matches(&self.processed_track[i].0.notes, &tail_window.notes)
+                    });
+
+                    match found {
+                        Some(target) => {
+                            offset_index = target - position;
+                            self.break_in_between_notes = false;
+                            self.frozen_count = 0;
+                        }
+                        None => {
+                            // The note is not ahead of the cursor: freeze here and
+                            // only re-readjust from scratch once the player has
+                            // been rejected too many times in a row.
+                            self.frozen_count += 1;
+                            if self.frozen_count > MAX_NOTE_FREEZES_BEFORE_READJUSTING {
+                                self.last_position = None;
+                            }
+                            return None;
+                        }
+                    }
                 }
+
                 self.query_head = self.query.len();
-                if position + offset_index >= self.processed_track.len() {
+                if position + offset_index >= len {
                     return Some(self.processed_track[position].1.end_time_ms);
                 }
                 position + offset_index
@@ -170,4 +212,12 @@ impl NoteTrack {
         self.last_position = Some(position);
         Some(self.processed_track[position].1.start_time_ms)
     }
+}
+
+/// True when every note the player is currently sounding belongs to the
+/// reference window. A single played note matches a chord window when it is one
+/// of that window's notes, so chord windows are reachable from single-note
+/// input.
+fn window_matches(reference: &[Note], played: &[Note]) -> bool {
+    !played.is_empty() && played.iter().all(|p| reference.contains(p))
 }
