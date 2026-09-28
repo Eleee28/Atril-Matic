@@ -6,7 +6,11 @@ pub mod utils;
 use serde::Deserialize;
 use wasm_bindgen::prelude::*;
 
-use crate::{note_track::NoteTrack, pitch_detector::PitchDetector, utils::SheetNote};
+use crate::{
+    note_track::{NoteTrack, NoteWindow},
+    pitch_detector::PitchDetector,
+    utils::SheetNote,
+};
 
 #[derive(Deserialize)]
 struct InputSheetNote {
@@ -81,11 +85,8 @@ impl AudioProcessor {
             }
         }
 
-        let slice = match note.note_value {
-            Some(_) => vec![note],
-            None => Vec::new(),
-        };
-        self.note_track.push_query_slice(slice);
+        let note_window = NoteWindow { notes: vec![note] };
+        self.note_track.push_query_slice(note_window);
 
         let position = self.note_track.match_position();
 

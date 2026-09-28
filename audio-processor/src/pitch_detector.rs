@@ -62,29 +62,6 @@ impl PitchDetector {
             note_value: Some(note_val),
             octave,
         };
-        // if magnitude < 0.1 {
-        //     return JsValue::from_str(
-        //         &serde_json::to_string(&serde_json::json!({
-        //             "note": "None",
-        //             "frequency": 0.0,
-        //             "confidence": 0.0
-        //         }))
-        //         .unwrap_or_default(),
-        //     );
-        // }
-
-        // // Find the closest musical note
-        // let (note, octave) = crate::utils::Note::from_frequency(frequency);
-        // let note_name = format!("{}{}", note.name(), octave);
-
-        // JsValue::from_str(
-        //     &serde_json::to_string(&serde_json::json!({
-        //         "note": note_name,
-        //         "frequency": frequency,
-        //         "confidence": magnitude.min(1.0)
-        //     }))
-        //     .unwrap_or_default(),
-        // )
     }
     //estandp sincero no estoy muy claro como funciona, simplemente copie la funcion y mappear la a los valores.
     fn apply_window(&self, samples: &mut [f64]) {
