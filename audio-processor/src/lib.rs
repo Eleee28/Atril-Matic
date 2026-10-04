@@ -3,8 +3,22 @@ pub mod note_track;
 pub mod pitch_detector;
 pub mod utils;
 
+use log::{debug, warn, error};
 use serde::Deserialize;
 use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen(start)]
+pub fn start() {
+	console_error_panic_hook::set_once();
+
+	#[cfg(feature = "debug-logs")]
+	console_log::init_with_level(log::Level::Debug)
+		.expect("failed to initialize logger");
+
+	#[cfg(not(feature = "debug-logs"))]
+	console_log::init_with_level(log::Level::Warn)
+		.expect("failed to initialize logger");
+}
 
 use crate::{
     note_track::{NoteTrack, NoteWindow},
@@ -38,7 +52,7 @@ impl AudioProcessor {
     }
 
     pub fn add_track_json(&mut self, notes_json: &str) -> Result<(), String> {
-        // log(&format!("Received JSON: {}", notes_json)); // DEBUG
+        // debug!("Received JSON: {}", notes_json)); // DEBUG
 
         let input_notes: Vec<InputSheetNote> =
             serde_json::from_str(notes_json).map_err(|error| error.to_string())?;
@@ -56,14 +70,14 @@ impl AudioProcessor {
             })
             .collect();
 
-        log(&format!("Received {} notes", track.clone()?.len())); // DEBUG
+        debug!("Received {} notes", track.clone()?.len()); // DEBUG
 
         for note in &track.clone()? {
             // DEBUG
-            log(&format!(
+            debug!(
                 "{:?} octave={} start={} end={}",
                 note.note.note_value, note.note.octave, note.start_time_ms, note.end_time_ms
-            ));
+            );
         }
 
         self.note_track.add_track(&track?);
@@ -71,30 +85,30 @@ impl AudioProcessor {
     }
 
     pub fn cursor_location_from_mic_input(&mut self, data: &[u8]) -> Option<u32> {
-        log(&format!("Samples received: {}", data.len())); // DEBUG
+        debug!("Samples received: {}", data.len()); // DEBUG
 
         let note = self.pitch_detector.detect_pitch(data);
 
         match note.note_value {
             Some(note_value) => {
-                log(&format!("Detected note: {:?}{}", note_value, note.octave));
+                debug!("Detected note: {:?}{}", note_value, note.octave);
                 let note_window = NoteWindow { notes: vec![note] };
                 self.note_track.push_query_slice(note_window);
 
                 let position = self.note_track.match_position();
                 match position {
                     Some(timestamp) => {
-                        log(&format!("Matched cursor timestamp: {}", timestamp));
+                        debug!("Matched cursor timestamp: {}", timestamp);
                     }
                     None => {
-                        log("No cursor match found");
+                        warn!("No cursor match found");
                     }
                 }
 
                 position
             }
             None => {
-                log("No note detected");
+                warn!("No note detected");
                 self.note_track.reset_break_flag();
                 None
             }
@@ -104,6 +118,7 @@ impl AudioProcessor {
 
 fn parse_note_name(note_name: &str) -> Result<crate::utils::Note, String> {
     if note_name.len() < 2 {
+		error!("Invalid note name: {}", note_name);
         return Err("Invalid note name".to_string());
     }
 
@@ -127,6 +142,7 @@ fn parse_note_name(note_name: &str) -> Result<crate::utils::Note, String> {
         "A#" | "Bb" | "Cbb" => crate::utils::NoteValue::ASharp,
         "A##" | "B" | "Cb" => crate::utils::NoteValue::B,
         _ => {
+			error!("Invalid note value: {}", note_part);
             return Err(format!("Invalid note value: {}", note_part));
         }
     };
@@ -141,14 +157,14 @@ fn parse_note_name(note_name: &str) -> Result<crate::utils::Note, String> {
     })
 }
 
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
+#[cfg(not(target_arch = "wasm32"))]
+pub fn init_logger() {
+	let _ = env_logger::builder()
+		.is_test(cfg!(test))
+		.try_init();
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-fn log(s: &str) {
-    println!("{s}");
+#[cfg(target_arch = "wasm32")]
+pub fn init_logger() {
+	let _ = console_log::init_with_level(log::Level::Debug);
 }

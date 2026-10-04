@@ -1,4 +1,4 @@
-use crate::log;
+use log::debug;
 use rustfft::{num_complex::Complex, FftPlanner};
 use std::f64::consts::PI;
 use std::sync::Arc;
@@ -46,10 +46,10 @@ impl PitchDetector {
 
         self.spectrum = buffer;
         let (frequency, magnitude) = self.find_fundamental();
-        log(&format!(
+        debug!(
             "frequency: {}hz magnitude:{}",
             frequency, magnitude
-        ));
+        );
 
         if magnitude < THRESHOLD_ACCEPT_MAG {
             return Note {

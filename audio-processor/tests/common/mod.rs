@@ -34,3 +34,9 @@ pub fn note(value: NoteValue, octave: i32) -> Note {
         octave,
     }
 }
+
+// pub fn init_logger() {
+// 	let _ = env_logger::builder()
+// 		.is_test(true)
+// 		.try_init();
+// }
