@@ -1,10 +1,13 @@
-WASM_DIR=frontend/wasm
+WASM_DIR=wasm
 RUST_DIR=audio-processor
+BACKEND_DIR=backend
 
-dev: wasm up
+dev: wasm up backend
 
 wasm:
-	cd $(RUST_DIR) && wasm-pack build --target web --out-dir ../$(WASM_DIR) --out-name audio_processor
+	cd $(RUST_DIR) && \
+	wasm-pack build --target web --out-dir ../$(WASM_DIR) --out-name audio_processor && \
+	wasm-pack build --target nodejs --out-dir ../$(WASM_DIR)-node --out-name audio_processor
 
 test:
 	cd $(RUST_DIR) && cargo test --locked
@@ -22,4 +25,7 @@ up:
 down:
 	docker compose down
 
-.PHONY: wasm test check clean up down dev
+backend:
+	cd $(BACKEND_DIR) && npm run dev
+
+.PHONY: wasm test check clean up down dev backend

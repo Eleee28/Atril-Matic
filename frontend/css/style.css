@@ -412,6 +412,19 @@ button:disabled {
     white-space: nowrap;
 }
 
+.pitch-detector {
+    display: flex;
+    gap: 24px;
+    margin: 16px 0;
+    padding: 12px 16px;
+    background: var(--background);
+    border-radius: 8px;
+}
+
+.pitch-detector span {
+    white-space: nowrap;
+}
+
 [hidden] {
     display: none !important;
 }

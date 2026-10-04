@@ -3,7 +3,7 @@ use std::f64::consts::PI;
 use std::sync::Arc;
 use wasm_bindgen::prelude::*;
 
-use crate::utils::{Note, SheetNote};
+use crate::utils::{Note};
 
 // Musical notes (A4 = 440Hz)
 

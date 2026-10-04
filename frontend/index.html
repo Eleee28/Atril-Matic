@@ -70,9 +70,32 @@
                         <strong id="tempo-stat">120 BPM</strong>
                     </span>
                 </div>
+
+				<!-- Pitch detector -->
+				<div class="pitch-detector">
+					<span>
+                        Note:
+                        <strong id="pitch-note">-</strong>
+                    </span>
+
+                    <span>
+                        Frequency:
+                        <strong id="pitch-freq">0 Hz</strong>
+                    </span>
+
+                    <span>
+                        Confidence:
+                        <strong id="pitch-confidence">0 %</strong>
+                    </span>
+					<button id="pitchBtn">Start Listening</button>
+					<span>
+                        <strong id="pitch-status">Click to start</strong>
+                    </span>
+				</div>
             </section>
         </main>
 
         <script type="module" src="./js/script.js"></script>
+		<script type="module" src="./js/pitch_detector.js"></script>
     </body>
 </html>
