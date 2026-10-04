@@ -1,53 +1,103 @@
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
+
+use crate::log;
 
 use crate::utils::{Note, SheetNote};
-pub static TIME_SEGMENT_DURATION_MS: f32 = 2048.0 / 48000.0 * 1000.0;
-const QUERY_CAPACITY: usize = 50; // ~2 s of slices
-const WINDOW_HALF: usize = 75; // ref window ±3 s around last position
-const ACCEPT_THRESHOLD: f64 = 1.0; // avg cost/slice; calibrated in tests
-
+#[derive(Clone)]
+pub struct NoteWindow {
+    pub notes: Vec<Note>,
+}
+pub struct NoteTimeStamp {
+    pub start_time_ms: u32,
+    pub end_time_ms: u32,
+}
+pub const QUERY_CAPACITY: usize = 20;
+pub const ACCEPT_THRESHOLD: f64 = 1.5;
+pub const MAX_NOTE_FREEZES_BEFORE_READJUSTING: u32 = 2;
 pub struct NoteTrack {
     notes_track: Vec<SheetNote>,
-    features: Vec<Vec<Note>>,
-    query: VecDeque<Vec<Note>>, // rolling query window
+    processed_track: Vec<(NoteWindow, NoteTimeStamp)>,
+    query: VecDeque<NoteWindow>, // rolling query window
     last_position: Option<usize>,
+    query_head: usize, // first query slice not yet consumed by tracking
+    frozen_count: u32, // consecutive tracking rejections
+    break_in_between_notes: bool,
 }
 impl NoteTrack {
     pub fn new() -> Self {
         NoteTrack {
             notes_track: Vec::new(),
-            features: Vec::new(),
+            processed_track: Vec::new(),
             query: VecDeque::new(),
             last_position: None,
+            query_head: 0,
+            frozen_count: 0,
+            break_in_between_notes: false,
         }
+    }
+    pub fn reset_break_flag(&mut self) {
+        self.break_in_between_notes = true;
     }
     pub fn add_track(&mut self, track: &[SheetNote]) {
+        //i assume the track is ordered by start time and is not empty
         self.notes_track.extend(track.iter().copied());
-        let max_end_time = track.iter().map(|a| a.end_time_ms).max().unwrap_or(0) as f32;
-        let total_slices = (max_end_time / TIME_SEGMENT_DURATION_MS) as usize + 1;
-        self.features = Vec::with_capacity(total_slices);
-        for slice in 0..total_slices {
-            let window_start = slice as f32 * TIME_SEGMENT_DURATION_MS;
-            let window_end = (slice + 1) as f32 * TIME_SEGMENT_DURATION_MS;
-            let window_notes: Vec<Note> = track
-                .iter()
-                .filter(|p| {
-                    let start = p.start_time_ms as f32;
-                    let end = p.end_time_ms as f32;
-                    start < window_end && end >= window_start
-                })
-                .map(|p| p.note)
-                .collect();
-            self.features.push(window_notes);
+        self.query.clear();
+        self.query_head = 0;
+        self.frozen_count = 0;
+        self.last_position = None;
+        self.break_in_between_notes = false;
+        let mut windows = Vec::<(NoteWindow, NoteTimeStamp)>::new();
+        let mut break_points = HashSet::new();
+        for note in track {
+            break_points.insert(note.start_time_ms);
+            break_points.insert(note.end_time_ms);
         }
+        let mut breakpoint_vec = break_points.iter().cloned().collect::<Vec<u32>>();
+        breakpoint_vec.sort();
+        if breakpoint_vec.is_empty() {
+            self.processed_track.clear();
+            return;
+        }
+        let mut prev_break_point = breakpoint_vec[0];
+        for break_point in breakpoint_vec.iter().skip(1) {
+            let to_push = (
+                NoteWindow {
+                    notes: track
+                        .iter()
+                        .filter(|sheet_note| {
+                            sheet_note.start_time_ms <= prev_break_point
+                                && sheet_note.end_time_ms >= *break_point
+                        })
+                        .map(|sheet_note| sheet_note.note.clone())
+                        .collect(),
+                },
+                NoteTimeStamp {
+                    start_time_ms: prev_break_point,
+                    end_time_ms: *break_point,
+                },
+            );
+
+            prev_break_point = *break_point;
+            if !to_push.0.notes.is_empty() {
+                windows.push(to_push);
+            }
+        }
+        self.processed_track = windows
     }
-    pub fn push_query_slice(&mut self, notes: Vec<Note>) {
+    pub fn processed_track(&self) -> &[(NoteWindow, NoteTimeStamp)] {
+        &self.processed_track
+    }
+    pub fn push_query_slice(&mut self, notes: NoteWindow) {
         if self.query.len() == QUERY_CAPACITY {
             self.query.pop_front();
+            self.query_head = self.query_head.saturating_sub(1);
         }
         self.query.push_back(notes);
     }
-    fn dtw(query: &VecDeque<Vec<Note>>, reference: &[Vec<Note>]) -> Option<usize> {
+    fn dtw(
+        query: &VecDeque<NoteWindow>,
+        reference: &[(NoteWindow, NoteTimeStamp)],
+    ) -> Option<usize> {
         let (n, m) = (query.len(), reference.len());
         if n == 0 || m == 0 {
             return None;
@@ -60,7 +110,7 @@ impl NoteTrack {
 
         for i in 1..=n {
             for j in 1..=m {
-                let c = crate::utils::dtw_cost(&query[i - 1], &reference[j - 1]);
+                let c = crate::utils::dtw_cost(&query[i - 1].notes, &reference[j - 1].0.notes);
                 d[i][j] = c + d[i - 1][j - 1].min(d[i - 1][j]).min(d[i][j - 1]);
             }
         }
@@ -73,24 +123,101 @@ impl NoteTrack {
                 best_j = j;
             }
         }
+        log(&format!(
+            "Best accept: {} best j: {}",
+            best_cost.to_string(),
+            best_j.to_string()
+        )); // DEBUG
         (best_cost <= ACCEPT_THRESHOLD).then_some(best_j - 1)
     }
     pub fn match_position(&mut self) -> Option<u32> {
-        let (lo, hi) = match self.last_position {
-            Some(p) => (
-                p.saturating_sub(WINDOW_HALF),
-                (p + WINDOW_HALF).min(self.features.len()),
-            ),
-            None => (0, self.features.len()),
+        if self.processed_track.is_empty() {
+            return None;
+        }
+
+        let position = match self.last_position {
+            None => {
+                let calc_pos = Self::dtw(&self.query, &self.processed_track)?;
+                self.query_head = self.query.len();
+                calc_pos
+            }
+            Some(position) => {
+                let tail: Vec<NoteWindow> =
+                    self.query.iter().skip(self.query_head).cloned().collect();
+                if tail.is_empty() {
+                    return None;
+                }
+                let len = self.processed_track.len();
+                let mut offset_index = 0usize;
+
+                for tail_window in tail {
+                    if position + offset_index >= len {
+                        break;
+                    }
+
+                    // Hold while the player is still sounding a note that belongs
+                    // to the window the cursor is already on.
+                    if !self.break_in_between_notes
+                        && window_matches(
+                            &self.processed_track[position + offset_index].0.notes,
+                            &tail_window.notes,
+                        )
+                    {
+                        self.query_head = self.query.len();
+                        self.frozen_count = 0;
+                        self.break_in_between_notes = false;
+                        return Some(
+                            self.processed_track[position + offset_index]
+                                .1
+                                .start_time_ms,
+                        );
+                    }
+
+                    // The player moved on: walk forward to the next window that
+                    // actually contains the note. A pending break means the note
+                    // was re-struck after a rest, so the current window does not
+                    // count as a match.
+                    let search_from =
+                        position + offset_index + usize::from(self.break_in_between_notes);
+                    let found = (search_from..len).find(|&i| {
+                        window_matches(&self.processed_track[i].0.notes, &tail_window.notes)
+                    });
+
+                    match found {
+                        Some(target) => {
+                            offset_index = target - position;
+                            self.break_in_between_notes = false;
+                            self.frozen_count = 0;
+                        }
+                        None => {
+                            // The note is not ahead of the cursor: freeze here and
+                            // only re-readjust from scratch once the player has
+                            // been rejected too many times in a row.
+                            self.frozen_count += 1;
+                            if self.frozen_count > MAX_NOTE_FREEZES_BEFORE_READJUSTING {
+                                self.last_position = None;
+                            }
+                            return None;
+                        }
+                    }
+                }
+
+                self.query_head = self.query.len();
+                if position + offset_index >= len {
+                    return Some(self.processed_track[position].1.end_time_ms);
+                }
+                position + offset_index
+            }
         };
-        let j = Self::dtw(&self.query, &self.features[lo..hi])?;
-        let abs = lo + j;
-        self.last_position = Some(abs);
-        Some((abs as f32 * TIME_SEGMENT_DURATION_MS) as u32)
+        self.last_position = Some(position);
+        Some(self.processed_track[position].1.start_time_ms)
     }
-    pub fn note_at_time_ms(&self, time_ms: u32) -> Option<&SheetNote> {
-        self.notes_track
-            .iter()
-            .find(|n| time_ms >= n.start_time_ms && time_ms < n.end_time_ms)
-    }
+}
+
+/// True when every note the player is currently sounding belongs to the
+/// reference window. A single played note matches a chord window when it is one
+/// of that window's notes, so chord windows are reachable from single-note
+/// input.
+fn window_matches(reference: &[Note], played: &[Note]) -> bool {
+    !played.is_empty() && played.iter().all(|p| reference.contains(p))
 }

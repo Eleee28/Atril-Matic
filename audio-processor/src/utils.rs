@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use wasm_bindgen::prelude::*;
 pub fn set_panic_hook() {
     // When the `console_error_panic_hook` feature is enabled, we can call the
@@ -86,7 +88,7 @@ impl NoteValue {
         (NoteValue::from_index(midi_rounded), octave)
     }
 }
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 #[wasm_bindgen]
 pub struct Note {
     pub note_value: Option<NoteValue>,
@@ -104,18 +106,23 @@ pub(crate) fn note_to_midi(n: &Note) -> Option<i32> {
 }
 
 pub(crate) fn dtw_cost(q: &[Note], r: &[Note]) -> f64 {
-    match (q.first(), r.first()) {
-        (Some(a), Some(b)) => match (note_to_midi(a), note_to_midi(b)) {
-            (Some(qm), Some(rm)) => {
-                let qpc = qm.rem_euclid(12);
-                let rpc = rm.rem_euclid(12);
-                let pc_diff = (qpc - rpc).abs().min(12 - (qpc - rpc).abs()) as f64; // 0..6
-                pc_diff + 0.3 * (qm - rm).abs() as f64 / 12.0
-            }
-            _ => 1.0, // None-valued note counts as silence
-        },
-        (Some(_), None) | (None, Some(_)) => 1.0, // one silent, one sounding
-        (None, None) => 0.0,                      // both silent
+    let pairs = q.iter().flat_map(|x| r.iter().map(move |y| (x, y)));
+    let mut best_pairs = pairs
+        .map(|(note_a, note_b)| {
+            return match (note_to_midi(note_a), note_to_midi(note_b)) {
+                (Some(qm), Some(rm)) => ((qm - rm).abs() as f64, note_a, note_b),
+                _ => (f64::INFINITY, note_a, note_b), // None-valued note counts as silence
+            };
+        })
+        .collect::<Vec<(f64, &Note, &Note)>>();
+    best_pairs.sort_by(|a, b| a.0.total_cmp(&b.0));
+    let mut total_cost: f64 = 0.0;
+    let mut notes_used: Vec<&Note> = Vec::new();
+    for (cost, note_a, note_b) in best_pairs.iter().rev() {
+        if !notes_used.contains(note_a) && !notes_used.contains(note_b) {
+            notes_used.extend([note_a, note_b]);
+            total_cost += *cost;
+        }
     }
-    // chords (future): pairwise min-match over the sets, same per-note formula
+    total_cost
 }

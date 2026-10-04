@@ -21,6 +21,11 @@ class FftService {
 	}
 
 	processAudio(samples) {
+		if (this.audioProcessor === null) {
+			console.log("No track set - call POST /api/notes before /listened-audio");
+			return [];
+		}
+
 		const audioData = Uint8Array.from(samples);
 
 		const cursorTimestamp = this.audioProcessor.cursor_location_from_mic_input(audioData);

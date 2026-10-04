@@ -15,6 +15,10 @@ function buildNotesArray(sheet) {
 	const notes = [];
 	const msPerWholeNote = (60000 / time.tempoBpm) * 4;
 
+	// Keep the conversion used to build the backend track so the returned
+	// cursor timestamps (in ms) can be mapped back to OSMD's musical time.
+	time.msPerWholeNote = msPerWholeNote;
+
 	for (const measure of sheet.sourceMeasures) {
 		for (const container of measure.verticalSourceStaffEntryContainers) {
 			for (const staffEntry of container.staffEntries) {
