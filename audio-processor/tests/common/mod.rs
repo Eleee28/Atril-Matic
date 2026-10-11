@@ -1,7 +1,7 @@
 use audio_processor::utils::{Note, NoteValue};
 
 pub const SAMPLE_RATE: f64 = 48_000.0;
-pub const FFT_SIZE: usize = 2048;
+pub const FFT_SIZE: usize = 32768;
 
 pub fn sine_bytes(freq: f64, amplitude: f64, n: usize) -> Vec<u8> {
     (0..n)

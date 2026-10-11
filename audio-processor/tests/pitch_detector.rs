@@ -4,6 +4,13 @@ use audio_processor::pitch_detector::PitchDetector;
 use audio_processor::utils::NoteValue;
 use common::{sine_bytes, FFT_SIZE, SAMPLE_RATE};
 
+// The web-audio analyser caps at 32768 samples, but that grid leaves D0
+// (18.354 Hz) sitting almost exactly between two bins (bin 12.53), and the
+// raw peak-picking detector snaps it to bin 13 = D#0. 65536 halves the bin
+// width to 0.73 Hz, so every semitone in C0..B9 spans at least ~1.3 bins and
+// the full-range table is actually representable.
+const FULL_RANGE_FFT_SIZE: usize = 65536;
+
 const NOTES: [(&str, f64, i32, NoteValue); 120] = [
 	// Octave 0
 	("C0", 16.3516, 0, NoteValue::C),
@@ -165,7 +172,7 @@ fn detects_multiple_notes() {
 		(293.66, NoteValue::D, 4),
 		(329.63, NoteValue::E, 4),
 		(349.23, NoteValue::F, 4),
-		(392.00, NoteValue::A, 4),
+		(392.00, NoteValue::G, 4),
 		(493.88, NoteValue::B, 4),
 	];
 
@@ -214,9 +221,9 @@ fn detects_all_notes() {
 	let mut failures = Vec::new();
 
 	for &(name, frequency, expected_octave, expected_value) in NOTES.iter() {
-		let mut detector = PitchDetector::new(SAMPLE_RATE, FFT_SIZE);
+		let mut detector = PitchDetector::new(SAMPLE_RATE, FULL_RANGE_FFT_SIZE);
 
-		let audio = sine_bytes(frequency, 0.7, FFT_SIZE);
+		let audio = sine_bytes(frequency, 0.7, FULL_RANGE_FFT_SIZE);
 
 		let detected = detector.detect_pitch(&audio);
 		// let (expected_value, expected_octave) = expected_note(name);

@@ -8,7 +8,8 @@ use crate::utils::Note;
 const THRESHOLD_ACCEPT_MAG: f64 = 10.0;
 const MAX_HARMONIC_DIVISOR: usize = 4;
 const SUB_HARMONIC_THRESHOLD: f64 = 0.5;
-// Musical notes (A4 = 440Hz)
+const MIN_DETECT_HZ: f64 = 15.0;
+const MAX_DETECT_HZ: f64 = 20_000.0;
 
 #[wasm_bindgen]
 pub struct PitchDetector {
@@ -46,10 +47,7 @@ impl PitchDetector {
 
         self.spectrum = buffer;
         let (frequency, magnitude) = self.find_fundamental();
-        debug!(
-            "frequency: {}hz magnitude:{}",
-            frequency, magnitude
-        );
+        debug!("frequency: {}hz magnitude:{}", frequency, magnitude);
 
         if magnitude < THRESHOLD_ACCEPT_MAG {
             return Note {
@@ -78,8 +76,8 @@ impl PitchDetector {
 
         // Restrict the search to the vocal band. Skipping the sub-bass bins is
         // what stops drums/rumble (~20-60 Hz) from being detected as a note.
-        let min_bin = (60.0 / bin_width).round().max(1.0) as usize;
-        let max_bin = ((2000.0 / bin_width).round() as usize).min(self.fft_size / 2);
+        let min_bin = (MIN_DETECT_HZ / bin_width).floor().max(1.0) as usize;
+        let max_bin = ((MAX_DETECT_HZ / bin_width).ceil() as usize).min(self.fft_size / 2);
 
         let mut max_magnitude = 0.0;
         let mut max_index = 0;

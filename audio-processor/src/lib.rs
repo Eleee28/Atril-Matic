@@ -3,21 +3,20 @@ pub mod note_track;
 pub mod pitch_detector;
 pub mod utils;
 
-use log::{debug, warn, error};
+use log::{debug, error, warn};
 use serde::Deserialize;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(start)]
 pub fn start() {
-	console_error_panic_hook::set_once();
+    console_error_panic_hook::set_once();
 
-	#[cfg(feature = "debug-logs")]
-	console_log::init_with_level(log::Level::Debug)
-		.expect("failed to initialize logger");
+    #[cfg(feature = "debug-logs")]
+    console_log::init_with_level(log::Level::Debug).expect("failed to initialize logger");
 
-	#[cfg(not(feature = "debug-logs"))]
-	console_log::init_with_level(log::Level::Warn)
-		.expect("failed to initialize logger");
+    //#[cfg(not(feature = "debug-logs"))]
+    //console_log::init_with_level(log::Level::Warn)
+    //	.expect("failed to initialize logger");
 }
 
 use crate::{
@@ -118,7 +117,7 @@ impl AudioProcessor {
 
 fn parse_note_name(note_name: &str) -> Result<crate::utils::Note, String> {
     if note_name.len() < 2 {
-		error!("Invalid note name: {}", note_name);
+        error!("Invalid note name: {}", note_name);
         return Err("Invalid note name".to_string());
     }
 
@@ -142,7 +141,7 @@ fn parse_note_name(note_name: &str) -> Result<crate::utils::Note, String> {
         "A#" | "Bb" | "Cbb" => crate::utils::NoteValue::ASharp,
         "A##" | "B" | "Cb" => crate::utils::NoteValue::B,
         _ => {
-			error!("Invalid note value: {}", note_part);
+            error!("Invalid note value: {}", note_part);
             return Err(format!("Invalid note value: {}", note_part));
         }
     };
@@ -159,12 +158,10 @@ fn parse_note_name(note_name: &str) -> Result<crate::utils::Note, String> {
 
 #[cfg(not(target_arch = "wasm32"))]
 pub fn init_logger() {
-	let _ = env_logger::builder()
-		.is_test(cfg!(test))
-		.try_init();
+    let _ = env_logger::builder().is_test(cfg!(test)).try_init();
 }
 
 #[cfg(target_arch = "wasm32")]
 pub fn init_logger() {
-	let _ = console_log::init_with_level(log::Level::Debug);
+    let _ = console_log::init_with_level(log::Level::Debug);
 }

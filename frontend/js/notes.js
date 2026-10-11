@@ -6,7 +6,7 @@ export async function initNotes(sheet) {
 	const audioContext = new AudioContext();
 	const sampleRate = audioContext.sampleRate;
 
-	const fftSize = 2048;
+	const fftSize = 32768;
 
 	await sendNotes(notes, sampleRate, fftSize);
 }
@@ -31,7 +31,7 @@ function buildNotesArray(sheet) {
 					for (const note of voiceEntry.notes) {
 						if (!note.pitch) // rests do not have pitch
 							continue;
-						
+
 						const durationMusicalTime = note.length.realValue;
 
 						const start = Math.round(startMusicalTime * msPerWholeNote);
