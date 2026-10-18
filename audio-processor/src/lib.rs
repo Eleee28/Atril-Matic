@@ -39,6 +39,7 @@ pub struct AudioProcessor {
 }
 #[wasm_bindgen]
 impl AudioProcessor {
+	#[wasm_bindgen(constructor)]
     pub fn new(sample_rate: f64, fft_size: usize) -> AudioProcessor {
         AudioProcessor {
             pitch_detector: PitchDetector::new(sample_rate, fft_size),
@@ -113,6 +114,14 @@ impl AudioProcessor {
             }
         }
     }
+
+	pub fn detect_pitch_name(&mut self, samples: &[u8]) -> Option<String> {
+		let note = self.pitch_detector.detect_pitch(samples);
+
+		note.note_value.map(|value| {
+			format!("{}{}", value.name(), note.octave)
+		})
+	}
 }
 
 fn parse_note_name(note_name: &str) -> Result<crate::utils::Note, String> {

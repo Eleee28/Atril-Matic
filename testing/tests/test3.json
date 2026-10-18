@@ -1,0 +1,19 @@
+{
+	"id": "test-3",
+	"name": "Test 3 - Piano Audio",
+	"description": "Recognize notes from a real piano recording",
+	"type": "audio-recognition",
+	"input": {
+		"type": "audio",
+		"audioFile": "../fixtures/audio/piano.wav"
+	},
+	"expected": {
+		"notes": [
+			{
+				"note":"A4",
+				"start": 0,
+				"end": 1000
+			}
+		]
+	}
+}

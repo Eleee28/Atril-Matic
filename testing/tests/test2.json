@@ -1,0 +1,19 @@
+{
+	"id": "test-2",
+	"name": "Test 2 - C4 Recognition",
+	"description": "Detect C4 from a 261.63 Hz sine wave",
+	"type": "pitch-detection",
+	"input": {
+		"type": "sine",
+		"frequencies":[
+			261.63
+		],
+		"durationMs": 1000
+	},
+	"expected": {
+		"notes": [
+			"C4"
+		],
+		"minAccuracy": 0.95
+	}
+}

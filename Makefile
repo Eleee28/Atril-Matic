@@ -1,6 +1,7 @@
 WASM_DIR=wasm
 RUST_DIR=audio-processor
 BACKEND_DIR=backend
+WASM_TEST_DIR=testing/wasm
 
 dev: wasm up backend
 
@@ -9,7 +10,8 @@ dev-log: wasm-logs up backend
 wasm:
 	cd $(RUST_DIR) && \
 	wasm-pack build --target web --out-dir ../$(WASM_DIR) --out-name audio_processor && \
-	wasm-pack build --target nodejs --out-dir ../$(WASM_DIR)-node --out-name audio_processor
+	wasm-pack build --target nodejs --out-dir ../$(WASM_DIR)-node --out-name audio_processor && \
+	wasm-pack build --target web --out-dir ../$(WASM_TEST_DIR) --out-name audio_processor
 
 wasm-logs:
 	cd $(RUST_DIR) && \
