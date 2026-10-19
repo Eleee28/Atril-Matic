@@ -1,5 +1,6 @@
 use crate::log;
 use rustfft::{num_complex::Complex, FftPlanner};
+use serde::{Deserialize, Serialize};
 use std::f64::consts::PI;
 use std::sync::Arc;
 use wasm_bindgen::prelude::*;
@@ -8,26 +9,50 @@ use crate::utils::Note;
 const THRESHOLD_ACCEPT_MAG: f64 = 10.0;
 const MAX_HARMONIC_DIVISOR: usize = 4;
 const SUB_HARMONIC_THRESHOLD: f64 = 0.5;
-// Musical notes (A4 = 440Hz)
 
 #[wasm_bindgen]
 pub struct PitchDetector {
-    sample_rate: f64,
-    fft_size: usize,
     fft: Arc<dyn rustfft::Fft<f64>>,
     spectrum: Vec<Complex<f64>>,
+    info: FftInfo,
+}
+#[derive(Serialize, Deserialize)]
+pub struct FftInfo {
+    pub sample_rate: f64,
+    pub fft_size: usize,
+    pub threshhold_accept_mag: f64,
+    pub max_harmonic_divisor: usize,
+    pub sub_harmonic_threshold: f64,
 }
 
 impl PitchDetector {
-    pub fn new(sample_rate: f64, fft_size: usize) -> PitchDetector {
+    pub fn new(sample_rate: f64, fft_size: usize) -> Self {
         let mut planner = FftPlanner::<f64>::new();
         let fft = planner.plan_fft_forward(fft_size);
 
         PitchDetector {
-            sample_rate,
-            fft_size,
+            info: FftInfo {
+                sample_rate,
+                fft_size,
+                threshhold_accept_mag: THRESHOLD_ACCEPT_MAG,
+                max_harmonic_divisor: MAX_HARMONIC_DIVISOR,
+                sub_harmonic_threshold: SUB_HARMONIC_THRESHOLD,
+            },
             fft,
             spectrum: vec![Complex::new(0.0, 0.0); fft_size],
+        }
+    }
+    // to read this structure from a JSON just use
+    // given the string read
+    //  let saved: FftInfo = serde_json::from_str(&string)?;
+    // this is possible because the FftInfo struct has serde::Serialize and serde::Deserialize
+    pub fn from_fft_info(fft_info: FftInfo) -> Self {
+        let mut planner = FftPlanner::<f64>::new();
+        let fft = planner.plan_fft_forward(fft_info.fft_size);
+        Self {
+            fft: fft,
+            spectrum: vec![Complex::new(0.0, 0.0); fft_info.fft_size],
+            info: fft_info,
         }
     }
 
@@ -51,7 +76,7 @@ impl PitchDetector {
             frequency, magnitude
         ));
 
-        if magnitude < THRESHOLD_ACCEPT_MAG {
+        if magnitude < self.info.threshhold_accept_mag {
             return Note {
                 note_value: None,
                 octave: 0,
@@ -74,12 +99,12 @@ impl PitchDetector {
     }
 
     fn find_fundamental(&self) -> (f64, f64) {
-        let bin_width = self.sample_rate / self.fft_size as f64;
+        let bin_width = self.info.sample_rate / self.info.fft_size as f64;
 
         // Restrict the search to the vocal band. Skipping the sub-bass bins is
         // what stops drums/rumble (~20-60 Hz) from being detected as a note.
         let min_bin = (60.0 / bin_width).round().max(1.0) as usize;
-        let max_bin = ((2000.0 / bin_width).round() as usize).min(self.fft_size / 2);
+        let max_bin = ((2000.0 / bin_width).round() as usize).min(self.info.fft_size / 2);
 
         let mut max_magnitude = 0.0;
         let mut max_index = 0;
@@ -102,7 +127,7 @@ impl PitchDetector {
         // report that lower bin as the fundamental instead.
         let mut best_sub_magnitude = 0.0;
         let mut best_sub_bin = 0usize;
-        for k in 2..=MAX_HARMONIC_DIVISOR {
+        for k in 2..=self.info.max_harmonic_divisor {
             let sub_bin = (max_index as f64 / k as f64).round() as usize;
             if sub_bin < min_bin || sub_bin >= max_index {
                 continue;
@@ -113,7 +138,8 @@ impl PitchDetector {
                 best_sub_bin = sub_bin;
             }
         }
-        if best_sub_bin > 0 && best_sub_magnitude > max_magnitude * SUB_HARMONIC_THRESHOLD {
+        if best_sub_bin > 0 && best_sub_magnitude > max_magnitude * self.info.sub_harmonic_threshold
+        {
             return (best_sub_bin as f64 * bin_width, best_sub_magnitude);
         }
 
@@ -122,6 +148,6 @@ impl PitchDetector {
 
     /// Helper to get FFT size
     pub fn get_fft_size(&self) -> usize {
-        self.fft_size
+        self.info.fft_size
     }
 }
