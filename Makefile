@@ -33,6 +33,7 @@ check:
 clean:
 	cd $(RUST_DIR) && cargo clean
 	rm -rf $(WASM_DIR)
+	rm -rf $(WASM_TEST_DIR)
 
 up:
 	docker compose up -d

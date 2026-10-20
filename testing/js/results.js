@@ -93,7 +93,70 @@ function createResultElement(result) {
 		details.appendChild(error);
 	}
 
-	if (result.actual !== null) {
+	if (result.type === "pitch-detection" && result.actual?.results) {
+		const failedResults = result.actual.results.filter(
+			item => !item.passed || item.accuracy < 0.95
+		);
+
+		const summary = document.createElement("p");
+		summary.textContent = `${result.actual.passed}/${result.actual.total} notes recognized correctly`;
+
+		details.appendChild(summary);
+
+		if (failedResults.length > 0) {
+			const table = document.createElement("table");
+			table.className = "results-table";
+
+			const thead = document.createElement("thead");
+			const headerRow = document.createElement("tr");
+
+			for (const title of ["Input Frequency", "Detected Frequency", "Error(cents)", "Expected Note", "Detected Note", "Accuracy"]) {
+				const th = document.createElement("th");
+				th.textContent = title;
+				headerRow.appendChild(th);
+			}
+
+			thead.appendChild(headerRow);
+			table.appendChild(thead);
+
+			const tbody = document.createElement("tbody");
+
+			for (const item of failedResults) {
+				const row = document.createElement("tr");
+
+				console.log("result item: ", item);
+
+				const values = [
+					`${item.frequency.toFixed(2)} Hz`,
+
+					item.detectedFrequency !== null
+						? `${item.detectedFrequency.toFixed(2)} Hz`
+						: "-",
+
+					item.errorCents !== null
+						? item.errorCents.toFixed(2)
+						: "-",
+					
+					item.expected,
+					item.actual ?? "-",
+					`${(item.accuracy * 100).toFixed(1)}%`,
+				];
+
+				for (const value of values) {
+					const cell = document.createElement("td");
+					cell.textContent = value;
+					row.appendChild(cell);
+				}
+
+				tbody.appendChild(row);
+			}
+
+			table.appendChild(tbody);
+			details.appendChild(table);
+		}
+	}
+
+	else if (result.actual !== null) {
 		const expected = document.createElement("pre");
 		expected.textContent = `Expected: \n${JSON.stringify(result.expected, null, 2)}`;
 

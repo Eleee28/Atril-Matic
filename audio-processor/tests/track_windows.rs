@@ -5,6 +5,7 @@ mod common;
 
 use audio_processor::note_track::NoteTrack;
 use audio_processor::utils::{Note, NoteValue, SheetNote};
+use audio_processor::config::AudioConfig;
 use common::note;
 
 type Signature = (Vec<(NoteValue, i32)>, u32, u32);
@@ -47,7 +48,9 @@ fn windows(track: &NoteTrack) -> Vec<Signature> {
 }
 
 fn build(track: &[SheetNote]) -> NoteTrack {
-    let mut note_track = NoteTrack::new();
+	let config = AudioConfig::default();
+
+    let mut note_track = NoteTrack::new(config);
     note_track.add_track(track);
     note_track
 }

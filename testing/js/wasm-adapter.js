@@ -12,7 +12,7 @@ async function initializeWasm() {
 }
 
 function createProcessor(config) {
-	return new AudioProcessor(config.sampleRate, config.fftSize);
+	return AudioProcessor.new_with_config(JSON.stringify(config));
 }
 
 function splitIntoWindows(samples, windowSize, hopSize) {
@@ -50,9 +50,6 @@ export async function executeTest(test, config) {
 }
 
 async function executePitchDetectionTest(test, config) {
-	
-
-
 	const processor = createProcessor(config);
 
 	try {
@@ -77,29 +74,63 @@ async function executePitchDetectionTest(test, config) {
 			const detectedNotes = [];
 
 			for (const window of windows) {
-
-				const note = processor.detect_pitch_name(window);
+				const detected = JSON.parse(processor.detect_pitch_details(window));
 
 				// Keep null values to count missed detections
-				detectedNotes.push(note);
+				detectedNotes.push({
+					note: detected.note,
+					frequency: detected.frequency,
+					magnitude: detected.magnitude,
+				});
 			}
 
 			const detectedNote = getMostFrequentNote(
-				detectedNotes.filter((note) => note !== null)
+				detectedNotes
+					.map(result => result.note)
+					.filter((note) => note !== null)
 			);
 
 			const correctWindows = detectedNotes.filter(
-				(note) => note === test.expected.note
+				(result) => result.note === expectedNote
 			).length;
 
-			const accuracy = windows.length > 0 ? correctWindows / windows.length : 0;
+			const accuracy = detectedNotes.length > 0 ? correctWindows / detectedNotes.length : 0;
+
+			const detectedFrequency = getMedian(
+				detectedNotes
+					.filter(result =>
+						result.note === detectedNote &&
+						Number.isFinite(result.frequency)
+					)
+					.map(result => result.frequency)
+			);
+
+			const frequencyError = calculateFrequencyError(frequency, detectedFrequency);
+
+			// console.log({
+			// 	frequency,
+			// 	expectedNote,
+			// 	detectedNotes,
+			// 	detectedNote,
+			//	detectedFrequency,
+			//	...frequencyError,
+			// 	correctWindows,
+			// 	totalWindows: windows.length,
+			// 	accuracy,
+			// });
 
 			results.push({
 				frequency,
 				expected: expectedNote,
+
 				actual: detectedNote,
+				detectedFrequency,
+
+				...frequencyError,
+
 				passed: detectedNote === expectedNote,
 				accuracy,
+
 				totalWindows: windows.length,
 				correctWindows,
 				detectedNotes,
@@ -132,6 +163,38 @@ function getMostFrequentNote(notes) {
 	return [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
 }
 
+function getMedian(values) {
+	if (values.length === 0)
+		return null;
+
+	const sorted = [...values].sort((a, b) => a - b);
+
+	const middle = Math.floor(sorted.length / 2);
+
+	if (sorted.length % 2 === 0)
+		return (sorted[middle - 1] + sorted[middle] / 2);
+
+	return sorted[middle];
+}
+
+// Calculates the error between two frequencies:
+//	- Absolute error: Error (Hz) = | f_detected - f_expected |
+//	- Error in cents: Error (cents) = 1200 log_2(f_detected / f_expected)
+// Cents is useful in music because it measures the difference independently of the octave
+// https://chiooone.com/en/knowledge/cents-and-pitch-training/
+function calculateFrequencyError(expected, detected) {
+	if (detected === null || detected <= 0)
+		return {
+			errorHz: null,
+			errorCents: null,
+		};
+
+	return {
+		errorHz: Math.abs(detected - expected),
+		errorCents: 1200 * Math.log2(detected / expected),
+	};
+}
+
 async function executeAudioRecognitionTest(test, config) {
 	throw new Error("Audio recognition WASM adapter is not implemented yet.");
 }
@@ -152,20 +215,8 @@ function validateSupportedConfig(config) {
 	if (config.pitchAlgorithm !== "fft-peak")
 		errors.push("Only FFT Peak is currently supported.");
 
-	if (config.minFrequency !== 60 || config.maxFrequency !== 2000)
-		errors.push("Custom frequency ranges are not supported.");
-
-	if (config.magnitudeThreshold !== 10 ||
-		config.maxHarmonicDivisor !== 4 ||
-		config.subharmonicThreshold !== 0.5
-	)
-		errors.push("Custom pitch detection thresholds are not supported yet.")
-
-	if (config.queryCapacity !== 50 ||
-		config.acceptThreshold !== 1.5 ||
-		config.trackThreshold !== 0.9 ||
-		config.slack !== 2 ||
-		config.recoverAfter !== 5
+	if (config.trackThreshold !== 0.9 ||
+		config.slack !== 2
 	)
 		errors.push("Custom DTW paramenters are not supported yet.");
 

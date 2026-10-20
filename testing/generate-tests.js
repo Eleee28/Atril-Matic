@@ -32,6 +32,26 @@ function generateAllNotesTest() {
 		name: "All Notes C0-B9",
 		description: "Test all 120 notes from C0 to B9 including sharps",
 		type: "pitch-detection",
+		config: {
+			sampleRate: 48000,
+			fftSize: 65536,
+			windowSize: 65536,
+			hopSize: 512,
+			windowFunction: "hann",
+
+			pitchAlgorithm: "fft-peak",
+			minFrequency: 15,
+			maxFrequency: 20000,
+			magnitudeThreshold: 10,
+			maxHarmonicDivisor: 4,
+			subharmonicThreshold: 0.5,
+
+			queryCapacity: 20,
+			acceptThreshold: 1.5,
+			trackThreshold: 0.9,
+			slack: 2,
+			recoverAfter: 2,
+		},
 		input: {
 			type: "sine",
 			frequencies,
