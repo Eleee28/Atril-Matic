@@ -103,7 +103,7 @@ impl PitchDetector {
 
         let (best_sub_bin, best_sub_magnitude) = self.best_sub_bin_and_mag(max_index, min_bin);
         if best_sub_bin > 0 && best_sub_magnitude > max_magnitude * SUB_HARMONIC_THRESHOLD {
-            let delta = self.granke_estimator(max_index);
+            let delta = self.granke_interpolator(max_index);
             let f_estimated = (best_sub_bin as f64 + delta) * bin_width;
             return (f_estimated, best_sub_magnitude);
         }
@@ -112,7 +112,7 @@ impl PitchDetector {
         //δ = the fractional offset Quinn returns
         //fs = sample rate (48000khz)
         //N = FFT size (2048)
-        let delta = self.granke_estimator(max_index);
+        let delta = self.granke_interpolator(max_index);
         let f_estimated = (max_index as f64 + delta) * bin_width;
         (f_estimated, max_magnitude)
     }
@@ -144,7 +144,7 @@ impl PitchDetector {
     //fs = sample rate (48000khz)
     //N = FFT size (2048)
     // similar to the Quin estimator but already made to be used with the Hann window. Low spectral leakage and
-    fn granke_estimator(&self, peak_index: usize) -> f64 {
+    fn granke_interpolator(&self, peak_index: usize) -> f64 {
         let left = self.spectrum[peak_index - 1].norm();
         let center = self.spectrum[peak_index].norm();
         let right = self.spectrum[peak_index + 1].norm();
