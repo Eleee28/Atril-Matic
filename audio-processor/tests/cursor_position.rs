@@ -26,7 +26,7 @@ fn sheet(note: Note, start_time_ms: u32, end_time_ms: u32) -> SheetNote {
 /// every window holds exactly one note and the expected cursor timestamp is
 /// simply that window's start time.
 ///
-/// F4 = bin 15, A4 = bin 19, C5 = bin 22, E5 = bin 28.
+/// F4 = bin 238, A4 = bin 300, C5 = bin 357, E5 = bin 450.
 fn four_note_track() -> Vec<SheetNote> {
     vec![
         sheet(note(NoteValue::F, 4), 0, 1000),
@@ -41,7 +41,7 @@ fn the_cursor_lands_on_the_start_of_each_played_note() {
     let mut processor = AudioProcessor::new(SAMPLE_RATE, FFT_SIZE);
     processor.add_track(four_note_track());
 
-    let played = [(15usize, 0u32), (19, 1000), (22, 2000), (28, 3000)];
+    let played = [(238usize, 0u32), (300, 1000), (357, 2000), (450, 3000)];
 
     for (bin, expected_ms) in played {
         let data = sine_bytes(bin_frequency(bin), 0.7, FFT_SIZE);
@@ -62,7 +62,7 @@ fn the_cursor_stays_put_when_the_same_note_is_held() {
     let mut processor = AudioProcessor::new(SAMPLE_RATE, FFT_SIZE);
     processor.add_track(four_note_track());
 
-    let data = sine_bytes(bin_frequency(15), 0.7, FFT_SIZE); // F4, window 0..1000
+    let data = sine_bytes(bin_frequency(238), 0.7, FFT_SIZE); // F4, window 0..1000
 
     let first = processor.cursor_location_from_mic_input(&data);
     assert_eq!(first, Some(0), "the first sample locks onto the F4 window");
@@ -78,12 +78,12 @@ fn the_cursor_stays_put_when_the_same_note_is_held() {
 
 #[test]
 fn the_cursor_does_not_move_on_a_note_that_is_not_in_the_track() {
-    // D5 (bin 25) appears nowhere in the reference track.
+    // D5 (bin 401) appears nowhere in the reference track.
     let mut processor = AudioProcessor::new(SAMPLE_RATE, FFT_SIZE);
     processor.add_track(four_note_track());
 
-    let f4 = sine_bytes(bin_frequency(15), 0.7, FFT_SIZE);
-    let d5 = sine_bytes(bin_frequency(25), 0.7, FFT_SIZE);
+    let f4 = sine_bytes(bin_frequency(238), 0.7, FFT_SIZE);
+    let d5 = sine_bytes(bin_frequency(401), 0.7, FFT_SIZE);
 
     assert_eq!(processor.cursor_location_from_mic_input(&f4), Some(0));
 
@@ -101,7 +101,7 @@ fn the_cursor_does_not_move_while_the_input_is_silent() {
     let mut processor = AudioProcessor::new(SAMPLE_RATE, FFT_SIZE);
     processor.add_track(four_note_track());
 
-    let f4 = sine_bytes(bin_frequency(15), 0.7, FFT_SIZE);
+    let f4 = sine_bytes(bin_frequency(238), 0.7, FFT_SIZE);
     let silence = vec![128u8; FFT_SIZE];
 
     assert_eq!(processor.cursor_location_from_mic_input(&f4), Some(0));
@@ -125,8 +125,8 @@ fn a_rest_between_notes_is_jumped_over_rather_than_matched() {
         sheet(note(NoteValue::A, 4), 2000, 3000),
     ]);
 
-    let f4 = sine_bytes(bin_frequency(15), 0.7, FFT_SIZE);
-    let a4 = sine_bytes(bin_frequency(19), 0.7, FFT_SIZE);
+    let f4 = sine_bytes(bin_frequency(238), 0.7, FFT_SIZE);
+    let a4 = sine_bytes(bin_frequency(300), 0.7, FFT_SIZE);
 
     assert_eq!(processor.cursor_location_from_mic_input(&f4), Some(0));
     assert_eq!(
@@ -142,7 +142,7 @@ fn the_cursor_is_clamped_to_the_end_of_the_track() {
     processor.add_track(four_note_track());
 
     // Jump straight to the last window by playing E5.
-    let e5 = sine_bytes(bin_frequency(28), 0.7, FFT_SIZE);
+    let e5 = sine_bytes(bin_frequency(450), 0.7, FFT_SIZE);
     assert_eq!(
         processor.cursor_location_from_mic_input(&e5),
         Some(3000),

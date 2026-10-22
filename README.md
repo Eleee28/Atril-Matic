@@ -28,4 +28,13 @@ There is a Makefile, run the following:
 
 - Stop and remove containers: `make down`
 
+## Debugging and logs
+
+~~~rust
+error!("Something failed");
+warn!("Unexpected value");
+info!("Track loaded");
+debug!("Detected frequency: {}", frequency);
+~~~
+
 ## License

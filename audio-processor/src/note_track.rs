@@ -1,6 +1,6 @@
 use std::collections::{HashSet, VecDeque};
 
-use crate::log;
+use log::debug;
 
 use crate::utils::{Note, SheetNote};
 #[derive(Clone)]
@@ -123,11 +123,11 @@ impl NoteTrack {
                 best_j = j;
             }
         }
-        log(&format!(
+        debug!(
             "Best accept: {} best j: {}",
             best_cost.to_string(),
             best_j.to_string()
-        )); // DEBUG
+        ); // DEBUG
         (best_cost <= ACCEPT_THRESHOLD).then_some(best_j - 1)
     }
     pub fn match_position(&mut self) -> Option<u32> {

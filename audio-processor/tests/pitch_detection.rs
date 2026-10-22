@@ -18,29 +18,31 @@ fn bin_frequency(bin: usize) -> f64 {
 
 /// (bin, expected note value, expected octave).
 ///
-/// Only bins whose frequency sits well away from the halfway point between two
-/// semitones are used, so the table stays meaningful even if the bin width
-/// changes. `from_frequency` rounds to the nearest MIDI number, and
+/// The bins are the ones whose centre frequency lands on the named note for
+/// the current `FFT_SIZE = 32768` (bin width 48000/32768 = 1.46484375 Hz).
+/// Each bin centre is kept well away from the halfway point between two
+/// semitones, so the expectation is free of rounding questions.
+/// `from_frequency` rounds to the nearest MIDI number, and
 /// `from_index`/`octave` follow the usual MIDI convention (A4 = 69).
 const VOCAL_RANGE: &[(usize, NoteValue, i32)] = &[
-    (5, NoteValue::ASharp, 2),
-    (7, NoteValue::E, 3),
-    (10, NoteValue::ASharp, 3),
-    (11, NoteValue::C, 4),
-    (14, NoteValue::E, 4),
-    (15, NoteValue::F, 4),
-    (16, NoteValue::FSharp, 4),
-    (19, NoteValue::A, 4),
-    (21, NoteValue::B, 4),
-    (22, NoteValue::C, 5),
-    (25, NoteValue::D, 5),
-    (28, NoteValue::E, 5),
-    (33, NoteValue::G, 5),
-    (40, NoteValue::ASharp, 5),
-    (45, NoteValue::C, 6),
-    (53, NoteValue::DSharp, 6),
-    (56, NoteValue::E, 6),
-    (63, NoteValue::FSharp, 6),
+    (80, NoteValue::ASharp, 2),
+    (113, NoteValue::E, 3),
+    (159, NoteValue::ASharp, 3),
+    (179, NoteValue::C, 4),
+    (225, NoteValue::E, 4),
+    (238, NoteValue::F, 4),
+    (253, NoteValue::FSharp, 4),
+    (300, NoteValue::A, 4),
+    (337, NoteValue::B, 4),
+    (357, NoteValue::C, 5),
+    (401, NoteValue::D, 5),
+    (450, NoteValue::E, 5),
+    (535, NoteValue::G, 5),
+    (636, NoteValue::ASharp, 5),
+    (714, NoteValue::C, 6),
+    (850, NoteValue::DSharp, 6),
+    (900, NoteValue::E, 6),
+    (1010, NoteValue::FSharp, 6),
 ];
 
 #[test]
@@ -68,8 +70,8 @@ fn recognises_notes_played_an_octave_apart() {
     // failure mode of reporting a harmonic peak instead of the fundamental.
     let mut detector = PitchDetector::new(SAMPLE_RATE, FFT_SIZE);
 
-    // C4 = bin 11, C5 = bin 22, C6 = bin 45.
-    for bin in [11usize, 22, 45] {
+    // C4 = bin 179, C5 = bin 357, C6 = bin 714.
+    for bin in [179usize, 357, 714] {
         let detected = detector.detect_pitch(&sine_bytes(bin_frequency(bin), 0.7, FFT_SIZE));
         assert_eq!(
             detected.note_value,
@@ -79,7 +81,7 @@ fn recognises_notes_played_an_octave_apart() {
         );
     }
 
-    let octaves: Vec<i32> = [11usize, 22, 45]
+    let octaves: Vec<i32> = [179usize, 357, 714]
         .iter()
         .map(|bin| {
             detector
@@ -110,17 +112,17 @@ fn reports_silence_for_a_flat_signal() {
 
 #[test]
 fn corrects_to_the_fundamental_when_a_harmonic_is_the_peak() {
-    // The 3rd harmonic (F#6, bin 63) is the strongest peak, but the true
-    // fundamental (B4, bin 21) carries enough energy to trigger the
+    // The 3rd harmonic (F#6, bin 1011) is the strongest peak, but the true
+    // fundamental (B4, bin 337) carries enough energy to trigger the
     // sub-harmonic correction. Without it the note is reported as F#6.
     let mut detector = PitchDetector::new(SAMPLE_RATE, FFT_SIZE);
-    let b4 = bin_frequency(21);
+    let b4 = bin_frequency(337);
 
     let detected = detector.detect_pitch(&sum_sine_bytes(
         &[
-            (b4, 0.45),       // fundamental (bin 21)
-            (2.0 * b4, 0.35), // 2nd harmonic (bin 42)
-            (3.0 * b4, 0.6),  // 3rd harmonic (bin 63), strongest peak
+            (b4, 0.45),         // fundamental (bin 337)
+            (2.0 * b4, 0.35),   // 2nd harmonic (bin 674)
+            (3.0 * b4, 0.6),    // 3rd harmonic (bin 1011), strongest peak
         ],
         FFT_SIZE,
     ));
@@ -134,17 +136,18 @@ fn corrects_to_the_fundamental_when_a_harmonic_is_the_peak() {
 
 #[test]
 fn corrects_to_the_fundamental_for_a_non_divisible_peak_bin() {
-    // Same track, but the strongest peak is 1500 Hz (bin 64), which is not
-    // divisible by 3. A naive `64 % 3 != 0` style check would skip the
-    // sub-harmonic search and report F#6.
+    // Same track, but the strongest peak is bin_frequency(1010), which is not
+    // divisible by 3 (1010 % 3 != 0) yet still rounds to the fundamental's bin
+    // (337). A naive `1010 % 3 != 0` style check would skip the sub-harmonic
+    // search and report F#6.
     let mut detector = PitchDetector::new(SAMPLE_RATE, FFT_SIZE);
-    let b4 = bin_frequency(21);
+    let b4 = bin_frequency(337);
 
     let detected = detector.detect_pitch(&sum_sine_bytes(
         &[
-            (b4, 0.45),       // fundamental (bin 21)
-            (2.0 * b4, 0.35), // 2nd harmonic (bin 42)
-            (1500.0, 0.6),    // strongest peak, bin 64 (64 % 3 != 0)
+            (b4, 0.45),         // fundamental (bin 337)
+            (2.0 * b4, 0.35),   // 2nd harmonic (bin 674)
+            (bin_frequency(1010), 0.6), // strongest peak, bin 1010
         ],
         FFT_SIZE,
     ));

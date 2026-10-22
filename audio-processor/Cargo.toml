@@ -9,6 +9,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["dep:console_error_panic_hook"]
+debug-logs = []
 
 [dependencies]
 wasm-bindgen = "0.2.84"
@@ -17,6 +18,7 @@ web-sys = { version = "0.3", features = ["console"] }
 console_error_panic_hook = { version = "0.1.7", optional = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+log = "0.4"
 
 [dependencies.rustfft]
 version = "6.1"
@@ -31,3 +33,9 @@ wasm-bindgen-test = "0.3.34"
 [profile.release]
 # Tell `rustc` to optimize for small code size.
 opt-level = "s"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+env_logger = "0.11"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_log = "1"
