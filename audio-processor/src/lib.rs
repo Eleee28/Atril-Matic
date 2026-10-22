@@ -2,22 +2,12 @@
 pub mod note_track;
 pub mod pitch_detector;
 pub mod utils;
+pub mod config;
 
 use log::{debug, error, warn};
 use serde::Deserialize;
 use wasm_bindgen::prelude::*;
-
-#[wasm_bindgen(start)]
-pub fn start() {
-    console_error_panic_hook::set_once();
-
-    #[cfg(feature = "debug-logs")]
-    console_log::init_with_level(log::Level::Debug).expect("failed to initialize logger");
-
-    //#[cfg(not(feature = "debug-logs"))]
-    //console_log::init_with_level(log::Level::Warn)
-    //	.expect("failed to initialize logger");
-}
+use config::AudioConfig;
 
 use crate::{
     note_track::{NoteTrack, NoteWindow},
@@ -32,19 +22,54 @@ struct InputSheetNote {
     end: u32,
 }
 
+#[wasm_bindgen(start)]
+pub fn start() {
+    console_error_panic_hook::set_once();
+
+    #[cfg(feature = "debug-logs")]
+    console_log::init_with_level(log::Level::Debug).expect("failed to initialize logger");
+
+    //#[cfg(not(feature = "debug-logs"))]
+    //console_log::init_with_level(log::Level::Warn)
+    //	.expect("failed to initialize logger");
+}
+
 #[wasm_bindgen]
 pub struct AudioProcessor {
     pitch_detector: PitchDetector,
     note_track: NoteTrack,
 }
+
+// Public WASM API
 #[wasm_bindgen]
 impl AudioProcessor {
+	#[wasm_bindgen(constructor)]
     pub fn new(sample_rate: f64, fft_size: usize) -> AudioProcessor {
-        AudioProcessor {
-            pitch_detector: PitchDetector::new(sample_rate, fft_size),
-            note_track: NoteTrack::new(),
-        }
+
+		let config = AudioConfig {
+			sample_rate,
+			fft_size,
+			window_size: fft_size,
+			..AudioConfig::default()
+		};
+
+        Self::from_config(config)
+			.expect("Invalid default AudioProcessor configuration")
     }
+
+	pub fn new_with_config(config_json: &str) -> Result<AudioProcessor, JsValue> {
+		let config: AudioConfig = serde_json::from_str(config_json)
+			.map_err(|error| {
+				JsValue::from_str(&format!(
+					"Invalid configuration JSON: {}",
+					error
+				))
+			})?;
+
+		// Initialize AudioProcessor
+		Self::from_config(config)
+			.map_err(|error| JsValue::from_str(&error))
+	}
 
     pub fn add_track(&mut self, track: Vec<SheetNote>) {
         self.note_track.add_track(&track);
@@ -113,6 +138,42 @@ impl AudioProcessor {
             }
         }
     }
+
+
+	pub fn detect_pitch_details(&mut self, samples: &[u8]) -> Result<String, JsValue> {
+		let detected = self.pitch_detector.detect_pitch_details(samples);
+
+		let note = detected.note.note_value.map(|value| {
+			format!("{}{}", value.name(), detected.note.octave)
+		});
+
+		let result = serde_json::json!({
+			"note": note,
+			"frequency": detected.frequency,
+			"magnitude": detected.magnitude,
+		});
+
+		serde_json::to_string(&result)
+			.map_err(|error| JsValue::from_str(&error.to_string()))
+	}
+}
+
+// Internal Rust Implementation
+impl AudioProcessor {
+	fn from_config(config: AudioConfig) -> Result<Self, String> {
+		config.validate()?; // Validate config
+
+		// Initialize PitchDetector
+		let pitch_detector = PitchDetector::new(config.clone());
+
+		// Initialize NoteTrack
+		let note_track = NoteTrack::new(config.clone());
+
+		Ok(Self {
+			pitch_detector,
+			note_track
+		})
+	}
 }
 
 fn parse_note_name(note_name: &str) -> Result<crate::utils::Note, String> {

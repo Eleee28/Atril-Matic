@@ -4,36 +4,41 @@ use std::f64::consts::PI;
 use std::sync::Arc;
 use wasm_bindgen::prelude::*;
 
+use crate::config::{AudioConfig, WindowFunction};
 use crate::utils::Note;
-const THRESHOLD_ACCEPT_MAG: f64 = 10.0;
-const MAX_HARMONIC_DIVISOR: usize = 4;
-const SUB_HARMONIC_THRESHOLD: f64 = 0.5;
-const MIN_DETECT_HZ: f64 = 15.0;
-const MAX_DETECT_HZ: f64 = 20_000.0;
+
+pub struct DetectedPitch {
+	pub note: Note,
+	pub frequency: Option<f64>,
+	pub magnitude: f64,
+}
 
 #[wasm_bindgen]
 pub struct PitchDetector {
-    sample_rate: f64,
-    fft_size: usize,
     fft: Arc<dyn rustfft::Fft<f64>>,
     spectrum: Vec<Complex<f64>>,
+
+	config: AudioConfig,
 }
 
 impl PitchDetector {
-    pub fn new(sample_rate: f64, fft_size: usize) -> PitchDetector {
+    pub fn new(config: AudioConfig) -> PitchDetector {
         let mut planner = FftPlanner::<f64>::new();
-        let fft = planner.plan_fft_forward(fft_size);
+        let fft = planner.plan_fft_forward(config.fft_size);
 
         PitchDetector {
-            sample_rate,
-            fft_size,
             fft,
-            spectrum: vec![Complex::new(0.0, 0.0); fft_size],
+            spectrum: vec![Complex::new(0.0, 0.0); config.fft_size],
+			config
         }
     }
 
     pub fn detect_pitch(&mut self, time_domain_data: &[u8]) -> Note {
-        // Convert byte data to float samples (0-255 to -1.0 to 1.0)
+        self.detect_pitch_details(time_domain_data).note
+    }
+
+	pub fn detect_pitch_details(&mut self, time_domain_data: &[u8]) -> DetectedPitch {
+		// Convert byte data to float samples (0-255 to -1.0 to 1.0)
         let mut samples: Vec<f64> = time_domain_data
             .iter()
             .map(|&byte| (byte as f64 - 128.0) / 128.0)
@@ -49,20 +54,30 @@ impl PitchDetector {
         let (frequency, magnitude) = self.find_fundamental();
         debug!("frequency: {}hz magnitude:{}", frequency, magnitude);
 
-        if magnitude < THRESHOLD_ACCEPT_MAG {
-            return Note {
-                note_value: None,
-                octave: 0,
-            };
+        if magnitude < self.config.magnitude_threshold {
+			return DetectedPitch { 
+				note: Note {
+					note_value: None,
+					octave: 0,
+				},
+				frequency: Some(frequency),
+				magnitude,
+			};
         }
         let (note_val, octave) = crate::utils::NoteValue::from_frequency(frequency);
-        return Note {
-            note_value: Some(note_val),
-            octave,
-        };
-    }
-    //estandp sincero no estoy muy claro como funciona, simplemente copie la funcion y mappear la a los valores.
-    fn apply_window(&self, samples: &mut [f64]) {
+
+		return DetectedPitch { 
+			note: Note {
+				note_value: Some(note_val),
+				octave,
+			},
+			frequency: Some(frequency),
+			magnitude
+		};
+	}
+
+    //TODO: (delete comment) estandp sincero no estoy muy claro como funciona, simplemente copie la funcion y mappear la a los valores.
+    fn apply_window(&self, samples: &mut [f64]) { // TODO: posibility to use Hann, Rectangular, Hamming and Blackman window functions
         let n = samples.len();
         for (i, sample) in samples.iter_mut().enumerate() {
             // Hanning window
@@ -71,13 +86,18 @@ impl PitchDetector {
         }
     }
 
+	fn window_coefficient(function: &WindowFunction, index: usize, size: usize) -> f32 {
+		// Implement rectangular, hann, hamming and blackman equations (switch case on function)
+		todo!()
+	}
+
     fn find_fundamental(&self) -> (f64, f64) {
-        let bin_width = self.sample_rate / self.fft_size as f64;
+        let bin_width = self.config.sample_rate / self.config.fft_size as f64;
 
         // Restrict the search to the vocal band. Skipping the sub-bass bins is
         // what stops drums/rumble (~20-60 Hz) from being detected as a note.
-        let min_bin = (MIN_DETECT_HZ / bin_width).floor().max(1.0) as usize;
-        let max_bin = ((MAX_DETECT_HZ / bin_width).ceil() as usize).min(self.fft_size / 2);
+        let min_bin = (self.config.min_frequency / bin_width).floor().max(1.0) as usize;
+        let max_bin = ((self.config.max_frequency / bin_width).ceil() as usize).min(self.config.fft_size / 2);
 
         let mut max_magnitude = 0.0;
         let mut max_index = 0;
@@ -100,7 +120,7 @@ impl PitchDetector {
         // report that lower bin as the fundamental instead.
         let mut best_sub_magnitude = 0.0;
         let mut best_sub_bin = 0usize;
-        for k in 2..=MAX_HARMONIC_DIVISOR {
+        for k in 2..= self.config.max_harmonic_divisor {
             let sub_bin = (max_index as f64 / k as f64).round() as usize;
             if sub_bin < min_bin || sub_bin >= max_index {
                 continue;
@@ -111,7 +131,7 @@ impl PitchDetector {
                 best_sub_bin = sub_bin;
             }
         }
-        if best_sub_bin > 0 && best_sub_magnitude > max_magnitude * SUB_HARMONIC_THRESHOLD {
+        if best_sub_bin > 0 && best_sub_magnitude > max_magnitude * self.config.subharmonic_threshold {
             return (best_sub_bin as f64 * bin_width, best_sub_magnitude);
         }
 
@@ -120,6 +140,6 @@ impl PitchDetector {
 
     /// Helper to get FFT size
     pub fn get_fft_size(&self) -> usize {
-        self.fft_size
+        self.config.fft_size
     }
 }

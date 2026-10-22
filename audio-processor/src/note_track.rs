@@ -3,6 +3,7 @@ use std::collections::{HashSet, VecDeque};
 use log::debug;
 
 use crate::utils::{Note, SheetNote};
+use crate::config::AudioConfig;
 #[derive(Clone)]
 pub struct NoteWindow {
     pub notes: Vec<Note>,
@@ -11,9 +12,7 @@ pub struct NoteTimeStamp {
     pub start_time_ms: u32,
     pub end_time_ms: u32,
 }
-pub const QUERY_CAPACITY: usize = 20;
-pub const ACCEPT_THRESHOLD: f64 = 1.5;
-pub const MAX_NOTE_FREEZES_BEFORE_READJUSTING: u32 = 2;
+
 pub struct NoteTrack {
     notes_track: Vec<SheetNote>,
     processed_track: Vec<(NoteWindow, NoteTimeStamp)>,
@@ -22,9 +21,11 @@ pub struct NoteTrack {
     query_head: usize, // first query slice not yet consumed by tracking
     frozen_count: u32, // consecutive tracking rejections
     break_in_between_notes: bool,
+
+	config: AudioConfig,
 }
 impl NoteTrack {
-    pub fn new() -> Self {
+    pub fn new(config: AudioConfig) -> Self {
         NoteTrack {
             notes_track: Vec::new(),
             processed_track: Vec::new(),
@@ -33,6 +34,7 @@ impl NoteTrack {
             query_head: 0,
             frozen_count: 0,
             break_in_between_notes: false,
+			config,
         }
     }
     pub fn reset_break_flag(&mut self) {
@@ -88,13 +90,13 @@ impl NoteTrack {
         &self.processed_track
     }
     pub fn push_query_slice(&mut self, notes: NoteWindow) {
-        if self.query.len() == QUERY_CAPACITY {
+        if self.query.len() == self.config.query_capacity {
             self.query.pop_front();
             self.query_head = self.query_head.saturating_sub(1);
         }
         self.query.push_back(notes);
     }
-    fn dtw(
+    fn dtw(&self,
         query: &VecDeque<NoteWindow>,
         reference: &[(NoteWindow, NoteTimeStamp)],
     ) -> Option<usize> {
@@ -128,7 +130,7 @@ impl NoteTrack {
             best_cost.to_string(),
             best_j.to_string()
         ); // DEBUG
-        (best_cost <= ACCEPT_THRESHOLD).then_some(best_j - 1)
+        (best_cost <= self.config.accept_threshold).then_some(best_j - 1)
     }
     pub fn match_position(&mut self) -> Option<u32> {
         if self.processed_track.is_empty() {
@@ -137,7 +139,7 @@ impl NoteTrack {
 
         let position = match self.last_position {
             None => {
-                let calc_pos = Self::dtw(&self.query, &self.processed_track)?;
+                let calc_pos = Self::dtw(self, &self.query, &self.processed_track)?;
                 self.query_head = self.query.len();
                 calc_pos
             }
@@ -194,7 +196,7 @@ impl NoteTrack {
                             // only re-readjust from scratch once the player has
                             // been rejected too many times in a row.
                             self.frozen_count += 1;
-                            if self.frozen_count > MAX_NOTE_FREEZES_BEFORE_READJUSTING {
+                            if self.frozen_count > self.config.recover_after {
                                 self.last_position = None;
                             }
                             return None;

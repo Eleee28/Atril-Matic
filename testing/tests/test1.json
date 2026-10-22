@@ -1,0 +1,19 @@
+{
+	"id": "test-1",
+	"name": "Test 1 - A4 Recognition",
+	"description": "Detect A4 from a 440 Hz sine wave",
+	"type": "pitch-detection",
+	"input": {
+		"type": "sine",
+		"frequencies":[
+			440
+		],
+		"durationMs": 1000
+	},
+	"expected": {
+		"notes": [
+			"A4"
+		],
+		"minAccuracy": 0.95
+	}
+}

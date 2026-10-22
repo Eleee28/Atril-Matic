@@ -2,6 +2,7 @@ mod common;
 
 use audio_processor::pitch_detector::PitchDetector;
 use audio_processor::utils::NoteValue;
+use audio_processor::config::AudioConfig;
 use common::{sine_bytes, FFT_SIZE, SAMPLE_RATE};
 
 // The web-audio analyser caps at 32768 samples, but that grid leaves D0
@@ -155,9 +156,16 @@ const NOTES: [(&str, f64, i32, NoteValue); 120] = [
 
 #[test]
 fn detects_a4() {
-	let mut detector = PitchDetector::new(SAMPLE_RATE, FFT_SIZE);
+	let config = AudioConfig {
+		sample_rate: SAMPLE_RATE,
+		fft_size: FFT_SIZE,
+		window_size: FFT_SIZE,
+		..AudioConfig::default()
+	};
 
-	let audio = sine_bytes(440.0, 0.7, FFT_SIZE);
+	let mut detector = PitchDetector::new(config.clone());
+
+	let audio = sine_bytes(440.0, 0.7, config.fft_size);
 
 	let note = detector.detect_pitch(&audio);
 
@@ -177,9 +185,16 @@ fn detects_multiple_notes() {
 	];
 
 	for (frequency, expected_note, expected_octave) in cases {
-		let mut detector = PitchDetector::new(SAMPLE_RATE, FFT_SIZE);
+		let config = AudioConfig {
+			sample_rate: SAMPLE_RATE,
+			fft_size: FFT_SIZE,
+			window_size: FFT_SIZE,
+			..AudioConfig::default()
+		};
 
-		let audio = sine_bytes(frequency, 0.7, FFT_SIZE);
+		let mut detector = PitchDetector::new(config.clone());
+
+		let audio = sine_bytes(frequency, 0.7, config.fft_size);
 
 		let note = detector.detect_pitch(&audio);
 
@@ -221,9 +236,17 @@ fn detects_all_notes() {
 	let mut failures = Vec::new();
 
 	for &(name, frequency, expected_octave, expected_value) in NOTES.iter() {
-		let mut detector = PitchDetector::new(SAMPLE_RATE, FULL_RANGE_FFT_SIZE);
+		let config = AudioConfig {
+			sample_rate: SAMPLE_RATE,
+			fft_size: FULL_RANGE_FFT_SIZE,
+			min_frequency: 15.0,
+			max_frequency: 20_000.0,
+			..AudioConfig::default()
+		};
 
-		let audio = sine_bytes(frequency, 0.7, FULL_RANGE_FFT_SIZE);
+		let mut detector = PitchDetector::new(config.clone());
+
+		let audio = sine_bytes(frequency, 0.7, config.fft_size);
 
 		let detected = detector.detect_pitch(&audio);
 		// let (expected_value, expected_octave) = expected_note(name);
@@ -239,7 +262,7 @@ fn detects_all_notes() {
 			failures.push(format!("{name:4} {frequency:10.4} Hz -> detected {detected_name}"));
 		}
 	}
-
+	// print also the frequency of the detected note so output is note frequency -> note frequency
 	if !failures.is_empty() {
 		panic!(
 			"\n{} notes were detected incorrectly:\n\n{}",
