@@ -70,6 +70,9 @@ async function executePitchDetectionTest(test, config) {
 				config.fftSize, 
 				config.hopSize
 			);
+			
+			if (windows.length === 0)
+				throw new Error(`Signal of ${samples.length} samples is shorter than fftSize ${config.fftSize}. Increase durationMs.`);
 
 			const detectedNotes = [];
 
@@ -172,7 +175,7 @@ function getMedian(values) {
 	const middle = Math.floor(sorted.length / 2);
 
 	if (sorted.length % 2 === 0)
-		return (sorted[middle - 1] + sorted[middle] / 2);
+		return (sorted[middle - 1] + sorted[middle]) / 2;
 
 	return sorted[middle];
 }

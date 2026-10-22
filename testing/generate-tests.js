@@ -55,7 +55,7 @@ function generateAllNotesTest() {
 		input: {
 			type: "sine",
 			frequencies,
-			durationMs: 1000,
+			durationMs: 1500,
 		},
 		expected: {
 			notes,
