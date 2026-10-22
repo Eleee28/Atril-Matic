@@ -239,6 +239,8 @@ fn detects_all_notes() {
 		let config = AudioConfig {
 			sample_rate: SAMPLE_RATE,
 			fft_size: FULL_RANGE_FFT_SIZE,
+			min_frequency: 15.0,
+			max_frequency: 20_000.0,
 			..AudioConfig::default()
 		};
 
