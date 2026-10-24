@@ -90,10 +90,11 @@
 
 							<div class="form-grid">
 								<label for="pitch-algorithm">Pitch Algorithm</label>
-								<select id="pitch-algorithm" name="pitchAlgorithm">
+								<select id="pitch-algorithm" name="pitchAlgorithmType">
 									<option value="fft-peak">FFT Peak</option>
 									<option value="fft-harmonics">FFT Harmonics</option>
 									<option value="hps">Harmonic Product Spectrum</option>
+									<option value="hps-with-harmonics">HPS with Harmonics</option>
 									<option value="yin">YIN</option>
 								</select>
 
@@ -145,6 +146,36 @@
 									value="0.5"
 									min="0"
 									step="0.1"
+								>
+
+								<label for="tau-min">Tau Min</label>
+								<input 
+									type="number"
+									id="tau-min"
+									name="tauMin"
+									value="1"
+									min="1"
+									step="1"
+								>
+
+								<label for="tau-max">Tau Max</label>
+								<input 
+									type="number"
+									id="tau-max"
+									name="tauMax"
+									value="10"
+									min="1"
+									step="1"
+								>
+
+								<label for="yin-threshold">YIN Threshold</label>
+								<input 
+									type="number"
+									id="yin-threshold"
+									name="yinThreshold"
+									value="0.15"
+									min="0"
+									step="0.01"
 								>
 							</div>
 						</fieldset>
