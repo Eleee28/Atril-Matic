@@ -45,15 +45,15 @@ impl PitchDetector {
             .map(|&byte| (byte as f64 - 128.0) / 128.0)
             .collect();
 
-        match self.config.pitch_algorithm {
-            PitchAlgorithm::Yin => {
-                if self.config.tau_max <= samples.len() / 2 {
-                    let frequency = self.yin_detect(
-                        self.config.tau_min,
-                        self.config.tau_max,
-                        self.config.yin_threshold,
-                        &samples,
-                    );
+        match &self.config.pitch_algorithm {
+            PitchAlgorithm::Yin {
+                tau_min,
+                tau_max,
+                yin_threshold,
+                ..
+            } => {
+                if *tau_max <= samples.len() / 2 {
+                    let frequency = self.yin_detect(*tau_min, *tau_max, *yin_threshold, &samples);
                     debug!("(YIN) frequency: {}hz ", frequency);
                     let (note_val, octave) = crate::utils::NoteValue::from_frequency(frequency);
                     return DetectedPitch {
@@ -87,7 +87,16 @@ impl PitchDetector {
                 let (frequency, magnitude) = self.find_fundamental();
                 debug!("frequency: {}hz magnitude:{}", frequency, magnitude);
 
-                if magnitude < self.config.magnitude_threshold {
+                let magnitude_threshold = match &self.config.pitch_algorithm {
+                    PitchAlgorithm::FftPeak { magnitude_threshold }
+                    | PitchAlgorithm::FftPeakWithHarmonics { magnitude_threshold, .. }
+                    | PitchAlgorithm::Hps { magnitude_threshold }
+                    | PitchAlgorithm::HpsWithHarmonics { magnitude_threshold, .. } => {
+                        *magnitude_threshold
+                    }
+                    PitchAlgorithm::Yin { .. } => f64::INFINITY,
+                };
+                if magnitude < magnitude_threshold {
                     return DetectedPitch {
                         note: Note {
                             note_value: None,
@@ -234,8 +243,8 @@ impl PitchDetector {
         let min_bin = (self.config.min_frequency / bin_width).floor().max(1.0) as usize;
         let max_bin =
             ((self.config.max_frequency / bin_width).ceil() as usize).min(self.config.fft_size / 2);
-        match self.config.pitch_algorithm {
-            PitchAlgorithm::Hps | PitchAlgorithm::HpsWithHarmonics => {
+        match &self.config.pitch_algorithm {
+            PitchAlgorithm::Hps { .. } | PitchAlgorithm::HpsWithHarmonics { .. } => {
                 let m: Vec<f64> = self.spectrum.iter().map(|c| c.norm()).collect();
                 let n = m.len();
                 // Q = 3: product spectrum length is floor(n/3) (or ceil, depending on step_by)
@@ -255,7 +264,12 @@ impl PitchDetector {
                 if best_hps_value <= 0.0 {
                     return (0.0, 0.0);
                 }
-                if self.config.pitch_algorithm == PitchAlgorithm::HpsWithHarmonics {
+                if let PitchAlgorithm::HpsWithHarmonics {
+                    max_harmonic_divisor,
+                    subharmonic_threshold,
+                    ..
+                } = &self.config.pitch_algorithm
+                {
                     // Sub-harmonic correction: the FFT peak is often the 2nd or 3rd harmonic
                     // of the true fundamental (e.g. guitar sustain), so the reported note can
                     // be an octave (or more) above what was actually played. If a
@@ -264,7 +278,7 @@ impl PitchDetector {
                     let best_bin_mag = m[best_index]; //magnitude fo the best bin and not hps value which are harmonic  bins multiplied
                     let mut best_sub_magnitude = 0.0;
                     let mut best_sub_bin = 0usize;
-                    for k in 2..=self.config.max_harmonic_divisor {
+                    for k in 2..=*max_harmonic_divisor {
                         let sub_bin = (best_index as f64 / k as f64).round() as usize;
                         if sub_bin < min_bin || sub_bin >= best_index {
                             continue;
@@ -276,7 +290,7 @@ impl PitchDetector {
                         }
                     }
                     if best_sub_bin > 0
-                        && best_sub_magnitude > best_bin_mag * self.config.subharmonic_threshold
+                        && best_sub_magnitude > best_bin_mag * (*subharmonic_threshold)
                     {
                         return (best_sub_bin as f64 * bin_width, best_sub_magnitude);
                     }
@@ -298,7 +312,12 @@ impl PitchDetector {
                     return (0.0, 0.0);
                 }
 
-                if self.config.pitch_algorithm == PitchAlgorithm::FftPeakWithHarmonics {
+                if let PitchAlgorithm::FftPeakWithHarmonics {
+                    max_harmonic_divisor,
+                    subharmonic_threshold,
+                    ..
+                } = &self.config.pitch_algorithm
+                {
                     // Sub-harmonic correction: the FFT peak is often the 2nd or 3rd harmonic
                     // of the true fundamental (e.g. guitar sustain), so the reported note can
                     // be an octave (or more) above what was actually played. If a
@@ -306,7 +325,7 @@ impl PitchDetector {
                     // report that lower bin as the fundamental instead.
                     let mut best_sub_magnitude = 0.0;
                     let mut best_sub_bin = 0usize;
-                    for k in 2..=self.config.max_harmonic_divisor {
+                    for k in 2..=*max_harmonic_divisor {
                         let sub_bin = (max_index as f64 / k as f64).round() as usize;
                         if sub_bin < min_bin || sub_bin >= max_index {
                             continue;
@@ -318,7 +337,7 @@ impl PitchDetector {
                         }
                     }
                     if best_sub_bin > 0
-                        && best_sub_magnitude > max_magnitude * self.config.subharmonic_threshold
+                        && best_sub_magnitude > max_magnitude * (*subharmonic_threshold)
                     {
                         return (best_sub_bin as f64 * bin_width, best_sub_magnitude);
                     }

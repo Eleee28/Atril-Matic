@@ -12,12 +12,6 @@ pub struct AudioConfig {
     pub pitch_algorithm: PitchAlgorithm,
     pub min_frequency: f64,
     pub max_frequency: f64,
-    pub magnitude_threshold: f64,
-    pub max_harmonic_divisor: usize,
-    pub subharmonic_threshold: f64,
-    pub tau_min: usize,
-    pub tau_max: usize,
-    pub yin_threshold: f64,
 
     pub query_capacity: usize,
     pub accept_threshold: f64,
@@ -35,14 +29,30 @@ pub enum WindowFunction {
     Blackman,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd, Ord, Eq)]
-#[serde(rename_all = "kebab-case")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "kebab-case", tag = "type")]
 pub enum PitchAlgorithm {
-    FftPeak,
-    FftPeakWithHarmonics,
-    HpsWithHarmonics,
-    Hps,
-    Yin,
+    FftPeak {
+        magnitude_threshold: f64,
+    },
+    FftPeakWithHarmonics {
+        magnitude_threshold: f64,
+        max_harmonic_divisor: usize,
+        subharmonic_threshold: f64,
+    },
+    Hps {
+        magnitude_threshold: f64,
+    },
+    HpsWithHarmonics {
+        magnitude_threshold: f64,
+        max_harmonic_divisor: usize,
+        subharmonic_threshold: f64,
+    },
+    Yin {
+        tau_min: usize,
+        tau_max: usize,
+        yin_threshold: f64,
+    },
 }
 
 impl Default for AudioConfig {
@@ -54,15 +64,11 @@ impl Default for AudioConfig {
             hop_size: 512,
             window_function: WindowFunction::Hann,
 
-            pitch_algorithm: PitchAlgorithm::FftPeak,
+            pitch_algorithm: PitchAlgorithm::FftPeak {
+                magnitude_threshold: 10.0,
+            },
             min_frequency: 60.0,
             max_frequency: 2000.0,
-            magnitude_threshold: 10.0,
-            max_harmonic_divisor: 4,
-            subharmonic_threshold: 0.5,
-            tau_min: 1,
-            tau_max: 10,
-            yin_threshold: 0.15,
 
             query_capacity: 50,
             accept_threshold: 1.5,
@@ -97,8 +103,14 @@ impl AudioConfig {
         {
             return Err("Invalid frequency range".into());
         }
-        if self.yin_threshold < 0.0 {
-            return Err("Invalid Yin parameters".into());
+
+        match &self.pitch_algorithm {
+            PitchAlgorithm::Yin { yin_threshold, .. } => {
+                if *yin_threshold < 0.0 {
+                    return Err("Invalid Yin parameters".into());
+                }
+            }
+            _ => {}
         }
         Ok(())
     }

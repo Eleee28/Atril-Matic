@@ -7,12 +7,15 @@ const DEFAULT_CONFIG = {
 	hopSize: 512,
 	windowFunction: "hann",
 
-	pitchAlgorithm: "fft-peak",
+	pitchAlgorithmType: "fft-peak",
 	minFrequency: 60,
 	maxFrequency: 2000,
 	magnitudeThreshold: 10,
 	maxHarmonicDivisor: 4,
 	subharmonicThreshold: 0.5,
+	tauMin: 1,
+	tauMax: 10,
+	yinThreshold: 0.15,
 
 	queryCapacity: 50,
 	acceptThreshold: 1.5,
@@ -31,6 +34,9 @@ const NUMERIC_FIELDS = new Set([
 	"magnitudeThreshold",
 	"maxHarmonicDivisor",
 	"subharmonicThreshold",
+	"tauMin",
+	"tauMax",
+	"yinThreshold",
 	"queryCapacity",
 	"acceptThreshold",
 	"trackThreshold",
@@ -42,15 +48,73 @@ export function getDefaultConfig() {
 	return { ...DEFAULT_CONFIG };
 }
 
+function buildPitchAlgorithm(formValues) {
+	const algorithmType = formValues.pitchAlgorithmType || formValues.pitchAlgorithm || "fft-peak";
+
+	if (algorithmType === "fft-peak") {
+		return {
+			type: "fft-peak",
+			magnitudeThreshold: formValues.magnitudeThreshold ?? 10,
+		};
+	} else if (algorithmType === "fft-harmonics" || algorithmType === "fft-peak-with-harmonics") {
+		return {
+			type: "fft-peak-with-harmonics",
+			magnitudeThreshold: formValues.magnitudeThreshold ?? 10,
+			maxHarmonicDivisor: formValues.maxHarmonicDivisor ?? 4,
+			subharmonicThreshold: formValues.subharmonicThreshold ?? 0.5,
+		};
+	} else if (algorithmType === "hps") {
+		return {
+			type: "hps",
+			magnitudeThreshold: formValues.magnitudeThreshold ?? 10,
+		};
+	} else if (algorithmType === "hps-with-harmonics" || algorithmType === "hpsWithHarmonics") {
+		return {
+			type: "hps-with-harmonics",
+			magnitudeThreshold: formValues.magnitudeThreshold ?? 10,
+			maxHarmonicDivisor: formValues.maxHarmonicDivisor ?? 4,
+			subharmonicThreshold: formValues.subharmonicThreshold ?? 0.5,
+		};
+	} else if (algorithmType === "yin") {
+		return {
+			type: "yin",
+			tauMin: formValues.tauMin ?? 1,
+			tauMax: formValues.tauMax ?? 10,
+			yinThreshold: formValues.yinThreshold ?? 0.15,
+		};
+	}
+
+	return {
+		type: "fft-peak",
+		magnitudeThreshold: formValues.magnitudeThreshold ?? 10,
+	};
+}
+
 export function getConfig() {
 	const form = document.getElementById("configuration-form");
 	const formData = new FormData(form);
 
-	const config = {};
+	const formValues = {};
 
 	for (const [key, value] of formData.entries()) {
-		config[key] = NUMERIC_FIELDS.has(key) ? Number(value) : value;
+		formValues[key] = NUMERIC_FIELDS.has(key) ? Number(value) : value;
 	}
+
+	const config = {
+		sampleRate: formValues.sampleRate,
+		fftSize: formValues.fftSize,
+		windowSize: formValues.windowSize,
+		hopSize: formValues.hopSize,
+		windowFunction: formValues.windowFunction,
+		pitchAlgorithm: buildPitchAlgorithm(formValues),
+		minFrequency: formValues.minFrequency,
+		maxFrequency: formValues.maxFrequency,
+		queryCapacity: formValues.queryCapacity,
+		acceptThreshold: formValues.acceptThreshold,
+		trackThreshold: formValues.trackThreshold,
+		slack: formValues.slack,
+		recoverAfter: formValues.recoverAfter,
+	};
 	return config;
 }
 
@@ -58,6 +122,21 @@ export function setConfig(config) {
 	const form = document.getElementById("configuration-form");
 
 	for (const [key, value] of Object.entries(config)) {
+		if (key === "pitchAlgorithm" && typeof value === "object" && value !== null) {
+			const algType = value.type;
+			let type = algType;
+			if (algType === "fft-peak-with-harmonics") type = "fft-harmonics";
+			else if (algType === "hps-with-harmonics") type = "hps-with-harmonics";
+			const field = form.elements.namedItem("pitchAlgorithmType");
+			if (field) field.value = type === "fft-peak-with-harmonics" ? "fft-harmonics" : type === "hps-with-harmonics" ? "hps-with-harmonics" : algType;
+			if (value.magnitudeThreshold !== undefined && form.elements.namedItem("magnitudeThreshold")) form.elements.namedItem("magnitudeThreshold").value = value.magnitudeThreshold;
+			if (value.maxHarmonicDivisor !== undefined && form.elements.namedItem("maxHarmonicDivisor")) form.elements.namedItem("maxHarmonicDivisor").value = value.maxHarmonicDivisor;
+			if (value.subharmonicThreshold !== undefined && form.elements.namedItem("subharmonicThreshold")) form.elements.namedItem("subharmonicThreshold").value = value.subharmonicThreshold;
+			if (value.tauMin !== undefined && form.elements.namedItem("tauMin")) form.elements.namedItem("tauMin").value = value.tauMin;
+			if (value.tauMax !== undefined && form.elements.namedItem("tauMax")) form.elements.namedItem("tauMax").value = value.tauMax;
+			if (value.yinThreshold !== undefined && form.elements.namedItem("yinThreshold")) form.elements.namedItem("yinThreshold").value = value.yinThreshold;
+			continue;
+		}
 		const field = form.elements.namedItem(key);
 		if (field)
 			field.value = value;
@@ -79,11 +158,15 @@ export function validateConfig(config) {
 	if (config.maxFrequency > config.sampleRate / 2)
 		errors.push("Maximum frequency cannot exceed the Hyquist frequency (sample rate / 2).")
 
-	if (config.magnitudeThreshold < 0)
+	const alg = config.pitchAlgorithm || {};
+	if (alg.magnitudeThreshold !== undefined && alg.magnitudeThreshold < 0)
 		errors.push("Magnitude threshold cannot be negative.")
 
-	if (config.subharmonicThreshold < 0)
+	if (alg.subharmonicThreshold !== undefined && alg.subharmonicThreshold < 0)
 		errors.push("Subharmonic threshold cannot be negative.")
+
+	if (alg.yinThreshold !== undefined && alg.yinThreshold < 0)
+		errors.push("YIN threshold cannot be negative.")
 
 	if (config.queryCapacity < 1)
 		errors.push("Query capacity must be greater than zero.")
