@@ -2,8 +2,8 @@ use std::collections::{HashSet, VecDeque};
 
 use log::debug;
 
-use crate::utils::{Note, SheetNote};
 use crate::config::AudioConfig;
+use crate::utils::{Note, SheetNote};
 #[derive(Clone)]
 pub struct NoteWindow {
     pub notes: Vec<Note>,
@@ -22,7 +22,7 @@ pub struct NoteTrack {
     frozen_count: u32, // consecutive tracking rejections
     break_in_between_notes: bool,
 
-	config: AudioConfig,
+    config: AudioConfig,
 }
 impl NoteTrack {
     pub fn new(config: AudioConfig) -> Self {
@@ -34,7 +34,7 @@ impl NoteTrack {
             query_head: 0,
             frozen_count: 0,
             break_in_between_notes: false,
-			config,
+            config,
         }
     }
     pub fn reset_break_flag(&mut self) {
@@ -96,7 +96,8 @@ impl NoteTrack {
         }
         self.query.push_back(notes);
     }
-    fn dtw(&self,
+    fn dtw(
+        &self,
         query: &VecDeque<NoteWindow>,
         reference: &[(NoteWindow, NoteTimeStamp)],
     ) -> Option<usize> {
@@ -174,7 +175,6 @@ impl NoteTrack {
                                 .start_time_ms,
                         );
                     }
-
                     // The player moved on: walk forward to the next window that
                     // actually contains the note. A pending break means the note
                     // was re-struck after a rest, so the current window does not

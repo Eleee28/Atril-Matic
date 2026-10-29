@@ -88,12 +88,20 @@ impl PitchDetector {
                 debug!("frequency: {}hz magnitude:{}", frequency, magnitude);
 
                 let magnitude_threshold = match &self.config.pitch_algorithm {
-                    PitchAlgorithm::FftPeak { magnitude_threshold }
-                    | PitchAlgorithm::FftPeakWithHarmonics { magnitude_threshold, .. }
-                    | PitchAlgorithm::Hps { magnitude_threshold }
-                    | PitchAlgorithm::HpsWithHarmonics { magnitude_threshold, .. } => {
-                        *magnitude_threshold
+                    PitchAlgorithm::FftPeak {
+                        magnitude_threshold,
                     }
+                    | PitchAlgorithm::FftPeakWithHarmonics {
+                        magnitude_threshold,
+                        ..
+                    }
+                    | PitchAlgorithm::Hps {
+                        magnitude_threshold,
+                    }
+                    | PitchAlgorithm::HpsWithHarmonics {
+                        magnitude_threshold,
+                        ..
+                    } => *magnitude_threshold,
                     PitchAlgorithm::Yin { .. } => f64::INFINITY,
                 };
                 if magnitude < magnitude_threshold {

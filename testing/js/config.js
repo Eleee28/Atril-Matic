@@ -19,8 +19,6 @@ const DEFAULT_CONFIG = {
 
 	queryCapacity: 50,
 	acceptThreshold: 1.5,
-	trackThreshold: 0.9,
-	slack: 2,
 	recoverAfter: 5,
 };
 
@@ -39,8 +37,6 @@ const NUMERIC_FIELDS = new Set([
 	"yinThreshold",
 	"queryCapacity",
 	"acceptThreshold",
-	"trackThreshold",
-	"slack",
 	"recoverAfter",
 ]);
 
@@ -111,8 +107,6 @@ export function getConfig() {
 		maxFrequency: formValues.maxFrequency,
 		queryCapacity: formValues.queryCapacity,
 		acceptThreshold: formValues.acceptThreshold,
-		trackThreshold: formValues.trackThreshold,
-		slack: formValues.slack,
 		recoverAfter: formValues.recoverAfter,
 	};
 	return config;
@@ -173,9 +167,6 @@ export function validateConfig(config) {
 
 	if (config.acceptThreshold < 0)
 		errors.push("Accept threshold cannot be negative.")
-
-	if (config.trackThreshold < 0)
-		errors.push("Track threshold cannot be negative.")
 
 	return errors;
 }

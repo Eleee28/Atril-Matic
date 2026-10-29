@@ -48,8 +48,6 @@ function generateAllNotesTest() {
 
 			queryCapacity: 20,
 			acceptThreshold: 1.5,
-			trackThreshold: 0.9,
-			slack: 2,
 			recoverAfter: 2,
 		},
 		input: {

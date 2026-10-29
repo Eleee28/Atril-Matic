@@ -15,8 +15,6 @@ pub struct AudioConfig {
 
     pub query_capacity: usize,
     pub accept_threshold: f64,
-    pub track_threshold: f32,
-    pub slack: usize,
     pub recover_after: u32,
 }
 
@@ -72,8 +70,6 @@ impl Default for AudioConfig {
 
             query_capacity: 50,
             accept_threshold: 1.5,
-            track_threshold: 0.9,
-            slack: 2,
             recover_after: 2,
         }
     }

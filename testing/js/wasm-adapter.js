@@ -31,7 +31,7 @@ function splitIntoWindows(samples, windowSize, hopSize) {
 
 export async function executeTest(test, config) {
 	validateSupportedConfig(config);
-	
+
 	await initializeWasm();
 
 	switch (test.type) {
@@ -66,11 +66,11 @@ async function executePitchDetectionTest(test, config) {
 			});
 
 			const windows = splitIntoWindows(
-				samples, 
-				config.fftSize, 
+				samples,
+				config.fftSize,
 				config.hopSize
 			);
-			
+
 			if (windows.length === 0)
 				throw new Error(`Signal of ${samples.length} samples is shorter than fftSize ${config.fftSize}. Increase durationMs.`);
 
@@ -140,7 +140,7 @@ async function executePitchDetectionTest(test, config) {
 			});
 		}
 
-		
+
 
 		return {
 			total: results.length,
@@ -212,18 +212,8 @@ function validateSupportedConfig(config) {
 	if (config.windowSize !== config.fftSize)
 		errors.push("Different windowSize and fftSize are not supported yet.");
 
-	if (config.windowFunction !== "hann")
-		errors.push("Only Hann window is currently supported.");
 
 	const algType = config.pitchAlgorithm?.type || config.pitchAlgorithm;
-	if (algType !== "fft-peak")
-		errors.push("Only FFT Peak is currently supported.");
-
-	if (config.trackThreshold !== 0.9 ||
-		config.slack !== 2
-	)
-		errors.push("Custom DTW paramenters are not supported yet.");
-
 	if (errors.length > 0)
 		throw new Error(errors.join("\n"));
 }
