@@ -119,12 +119,12 @@ async function sendAudioSamples(samples) {
 		throw new Error(`Audio request failed: ${response.status}`);
 
 	console.log(response);
-	
+
 	const cursors = await response.json(); // peta aqui
 
 	console.log("after response json");
 	console.log("cursors: ", cursors);
-	
+
 	return cursors;
 }
 

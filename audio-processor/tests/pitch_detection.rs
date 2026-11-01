@@ -5,7 +5,7 @@ mod common;
 
 use audio_processor::pitch_detector::PitchDetector;
 use audio_processor::utils::NoteValue;
-use audio_processor::config::AudioConfig;
+use audio_processor::config::{AudioConfig, PitchAlgorithm};
 
 use common::{sine_bytes, sum_sine_bytes, FFT_SIZE, SAMPLE_RATE};
 
@@ -139,6 +139,11 @@ fn corrects_to_the_fundamental_when_a_harmonic_is_the_peak() {
 		sample_rate: SAMPLE_RATE,
 		fft_size: FFT_SIZE,
 		window_size: FFT_SIZE,
+		pitch_algorithm: PitchAlgorithm::FftPeakWithHarmonics {
+			magnitude_threshold: 10.0,
+			max_harmonic_divisor: 4,
+			subharmonic_threshold: 0.5,
+		},
 		..AudioConfig::default()
 	};
 
@@ -170,6 +175,11 @@ fn corrects_to_the_fundamental_for_a_non_divisible_peak_bin() {
 		sample_rate: SAMPLE_RATE,
 		fft_size: FFT_SIZE,
 		window_size: FFT_SIZE,
+		pitch_algorithm: PitchAlgorithm::FftPeakWithHarmonics {
+			magnitude_threshold: 10.0,
+			max_harmonic_divisor: 4,
+			subharmonic_threshold: 0.5,
+		},
 		..AudioConfig::default()
 	};
 

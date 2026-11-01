@@ -7,7 +7,7 @@ const DEFAULT_CONFIG = {
 	hopSize: 512,
 	windowFunction: "hann",
 
-	pitchAlgorithm: "fft-peak",
+	pitchAlgorithmType: "fft-peak",
 	minFrequency: 60,
 	maxFrequency: 2000,
 	magnitudeThreshold: 10,
@@ -106,7 +106,7 @@ export function getConfig(form = getDefaultForm()) {
 	for (const [key, value] of formData.entries()) {
 		formValues[key] = NUMERIC_FIELDS.has(key) ? Number(value) : value;
 	}
-	
+
 	const config = {
 		sampleRate: formValues.sampleRate,
 		fftSize: formValues.fftSize,

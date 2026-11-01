@@ -203,7 +203,6 @@ function validateSupportedConfig(config) {
 		errors.push("Only Hann window is currently supported.");
 
 	const algType = config.pitchAlgorithm?.type || config.pitchAlgorithm;
-
 	if (algType !== "fft-peak")
 		errors.push("Only FFT Peak is currently supported.");
 
