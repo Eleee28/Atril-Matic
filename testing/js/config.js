@@ -14,7 +14,7 @@ const DEFAULT_CONFIG = {
 	maxHarmonicDivisor: 4,
 	subharmonicThreshold: 0.5,
 	tauMin: 1,
-	tauMax: 10,
+	tauMax: 800,
 	yinThreshold: 0.15,
 
 	queryCapacity: 50,

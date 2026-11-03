@@ -199,17 +199,13 @@ function validateSupportedConfig(config) {
 	if (config.windowSize !== config.fftSize)
 		errors.push("Different windowSize and fftSize are not supported yet.");
 
-	if (config.windowFunction !== "hann")
-		errors.push("Only Hann window is currently supported.");
-
-	const algType = config.pitchAlgorithm?.type || config.pitchAlgorithm;
-	if (algType !== "fft-peak")
-		errors.push("Only FFT Peak is currently supported.");
-
 	if (config.trackThreshold !== 0.9 ||
 		config.slack !== 2
 	)
 		errors.push("Custom DTW paramenters are not supported yet.");
+
+	if (config.tauMax > config.fftSize / 2)
+		errors.push("Invalid tauMax value.");
 
 	if (errors.length > 0)
 		throw new Error(errors.join("\n"));
