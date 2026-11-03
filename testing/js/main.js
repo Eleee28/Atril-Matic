@@ -2,20 +2,31 @@ import { initializeConfig, getConfig, validateConfig } from "./config.js";
 import { loadPredefinedTests, loadTestFromFile } from "./test-loader.js";
 import { runTest, runAllTests } from "./test-runner.js";
 import { updateResult, clearResults } from "./results.js";
+import { initializeCompare, runCompareTest, runCompareAll } from "./compare.js";
 
 let tests = [];
 let isRunning = false;
 
 async function initializeApp() {
 	initializeConfig();
+	initializeCompare();
+	initializeTabs();
 
 	document.getElementById("run-all-button").addEventListener("click", executeAllTests);
 
-	document.getElementById("load-test-button").addEventListener("click", () => {
-		document.getElementById("test-file-input").click();
+	document.getElementById("compare-run-all-button").addEventListener("click", () => {
+		runExclusive(() => runCompareAll(tests));
 	});
 
-	document.getElementById("test-file-input").addEventListener("change", handleTestFile);
+	for (const prefix of ["", "compare-"]) {
+		const fileInput = document.getElementById(`${prefix}test-file-input`);
+
+		document.getElementById(`${prefix}load-test-button`).addEventListener("click", () => {
+			fileInput.click();
+		});
+
+		fileInput.addEventListener("change", handleTestFile);
+	}
 
 	document.getElementById("clear-results-button").addEventListener("click", clearResults);
 
@@ -61,8 +72,44 @@ function getTestConfig(test) {
 	return config;
 }
 
+function initializeTabs() {
+	const tabs = document.querySelectorAll(".app-tab");
+
+	
+
+	const showView = () => {
+		const hash = location.hash.slice(1);
+		const active = [...tabs].find((tab) => getTabHash(tab) === hash) ?? tabs[0];
+		
+		tabs.forEach((tab) => {
+			const selected = tab === active;
+
+			tab.classList.toggle("active", selected);
+			document.getElementById(tab.dataset.view).hidden = !selected;
+		});
+	};
+
+	tabs.forEach((tab) => {
+		tab.addEventListener("click", () => {
+			location.hash = getTabHash(tab);
+		});
+	});
+
+	window.addEventListener("hashchange", showView);
+	showView();
+}
+
+function getTabHash(tab) {
+	return tab.dataset.view.replace(/-view$/, "");
+}
+
 function renderTests() {
-	const container = document.getElementById("tests-list");
+	renderTestList("tests-list", executeSingleTest);
+	renderTestList("compare-tests-list", (test) => runExclusive(() => runCompareTest(test)));
+}
+
+function renderTestList(containerId, onRun) {
+	const container = document.getElementById(containerId);
 
 	container.replaceChildren();
 
@@ -76,11 +123,11 @@ function renderTests() {
 	}
 
 	for (const test of tests) {
-		container.appendChild(createTestElement(test));
+		container.appendChild(createTestElement(test, onRun));
 	}
 }
 
-function createTestElement(test) {
+function createTestElement(test, onRun) {
 	const item = document.createElement("div");
 	item.className = "test-item";
 
@@ -102,7 +149,7 @@ function createTestElement(test) {
 	button.textContent = "Run";
 
 	button.addEventListener("click", () => {
-		executeSingleTest(test);
+		onRun(test);
 	});
 
 	item.append(info, button);
@@ -110,7 +157,7 @@ function createTestElement(test) {
 	return item;
 }
 
-async function executeSingleTest(test) {
+async function runExclusive(task) {
 	if (isRunning)
 		return;
 
@@ -118,8 +165,7 @@ async function executeSingleTest(test) {
 	setRunningState(true);
 
 	try {
-		const config = getTestConfig(test);
-		await runTest(test, config, updateResult);
+		await task();
 	} catch (error) {
 		alert(error.message);
 	} finally {
@@ -128,14 +174,15 @@ async function executeSingleTest(test) {
 	}
 }
 
+async function executeSingleTest(test) {
+	return runExclusive(async () => {
+		const config = getTestConfig(test);
+		await runTest(test, config, updateResult);
+	});
+}
+
 async function executeAllTests() {
-	if (isRunning)
-		return;
-
-	isRunning = true;
-	setRunningState(true);
-
-	try {
+	return runExclusive(async() => {
 		const currentConfig = getValidatedConfig();
 
 		const override = document.getElementById("use-current-config").checked;
@@ -149,16 +196,12 @@ async function executeAllTests() {
 				await runTest(test, config, updateResult);
 			}
 		}
-	} catch (error) {
-		alert(error.message);
-	} finally {
-		isRunning = false;
-		setRunningState(false);
-	}
+	});	
 }
 
 function setRunningState(running) {
 	document.getElementById("run-all-button").disabled = running;
+	document.getElementById("compare-run-all-button").disabled = running;
 
 	document.querySelectorAll(".test-item button").forEach(
 		(button) => {

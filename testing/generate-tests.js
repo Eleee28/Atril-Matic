@@ -39,10 +39,12 @@ function generateAllNotesTest() {
 			hopSize: 512,
 			windowFunction: "hann",
 
-			pitchAlgorithm: "fft-peak",
+			pitchAlgorithm: {
+				type: "fft-peak",
+				magnitudeThreshold: 10,
+			},
 			minFrequency: 15,
 			maxFrequency: 20000,
-			magnitudeThreshold: 10,
 			maxHarmonicDivisor: 4,
 			subharmonicThreshold: 0.5,
 

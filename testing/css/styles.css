@@ -55,6 +55,12 @@ button {
 }
 
 .app-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 16px;
+
     padding: 24px 32px;
 	background: var(--surface);
 	border-bottom: 1px solid var(--border);
@@ -80,6 +86,38 @@ button {
 	max-width: 1600px;
 	margin: 0 auto;
 	padding: 24px;
+}
+
+.app-content[hidden] {
+	display: none;
+}
+
+.app-tabs {
+	display: flex;
+	gap: 4px;
+	padding: 4px;
+
+	background: var(--background);
+	border: 1px solid var(--border);
+	border-radius: 8px;
+}
+
+.app-tab {
+	min-width: 110px;
+	background: transparent;
+	border-color: transparent;
+	color: var(--text-muted);
+}
+
+.app-tab:hover {
+	background: var(--surface);
+	border-color: var(--border);
+}
+
+.app-tab.active {
+	background: var(--primary);
+	border-color: var(--primary);
+	color: var(--background);
 }
 
 .panel {
@@ -127,6 +165,22 @@ button {
 .logs-panel {
 	grid-column: 2;
 	grid-row: 3;
+}
+
+.compare-content {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.compare-content .configuration-panel {
+	grid-column: auto;
+	grid-row: 1;
+}
+
+.compare-content .tests-panel,
+.compare-content .results-panel,
+.compare-content .logs-panel {
+	grid-column: 1 / -1;
+	grid-row: auto;
 }
 
 fieldset {
@@ -242,13 +296,13 @@ button:disabled {
 	cursor: not-allowed;
 }
 
-#run-all-button {
+#run-all-button, #compare-run-all-button {
 	background: var(--primary);
 	color: var(--background);
 	border-color: var(--primary);
 }
 
-#run-all-button:hover {
+#run-all-button:hover, #compare-run-all-button:hover {
 	background: var(--primary-hover);
 	border-color: var(--primary-hover);
 }
@@ -274,6 +328,21 @@ button:disabled {
 	font-size: 13px;
 	color: var(--text-muted);
 	cursor: pointer;
+}
+
+.test-options-note {
+	margin: 0;
+	font-size: 13px;
+	color: var(--text-muted);
+}
+
+.copy-config-button {
+	color: var(--primary);
+	border-color: var(--primary);
+}
+
+.copy-config-button:hover {
+	background: rgba(81, 130, 234, 0.08);
 }
 
 .tests-list {
@@ -353,12 +422,16 @@ button:disabled {
 	font-weight: 700;
 }
 
-#passed-tests {
+#passed-tests, .stat-success {
 	color: var(--success);
 }
 
-#failed-tests, #error-tests {
+#failed-tests, #error-tests, .stat-error {
 	color: var(--error);
+}
+
+#compare-better-config {
+	color: var(--primary);
 }
 
 .results-list {
@@ -393,6 +466,76 @@ button:disabled {
 
 .result-details p {
 	margin: 4px 0;
+}
+
+.result-statuses {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.result-meta {
+	font-size: 12px;
+	color: var(--text-muted);
+}
+
+.result-error {
+	color: var(--error);
+	white-space: pre-line;
+}
+
+.overall-item {
+	border-color: var(--secondary);
+}
+
+.metrics-table td.metric-winner {
+	background: var(--success-background);
+	color: var(--success);
+	font-weight: 600;
+}
+
+.metrics-table td.metric-delta {
+	font-family: "SFMono-Regular", monospace;
+	font-size: 12px;
+}
+
+.note-correct {
+	color: var(--success);
+	font-weight: 600;
+}
+
+.note-wrong {
+	color: var(--error);
+	font-weight: 600;
+}
+
+.collapsible {
+	margin-top: 16px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+}
+
+.collapsible summary {
+	padding: 10px 14px;
+	color: var(--primary);
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.collapsible summary:hover {
+	background: var(--background);
+}
+
+.collapsible[open] summary {
+	border-bottom: 1px solid var(--border);
+}
+
+.collapsible .results-table {
+	margin-top: 0;
+}
+
+.table-scroll {
+	overflow-x: auto;
 }
 
 .results-table {
@@ -443,6 +586,11 @@ button:disabled {
 .status-running {
 	background: var(--warning-background);
 	color: var(--warning);
+}
+
+.status-pending {
+	background: var(--background);
+	color: var(--text-muted);
 }
 
 .log-actions {

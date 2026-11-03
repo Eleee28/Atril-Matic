@@ -30,7 +30,7 @@ pub enum WindowFunction {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "kebab-case", tag = "type")]
+#[serde(rename_all = "kebab-case", rename_all_fields = "camelCase", tag = "type")]
 pub enum PitchAlgorithm {
     FftPeak {
         magnitude_threshold: f64,
