@@ -36,7 +36,7 @@ function copyConfig(sourceIndex, targetIndex) {
 		if (!element.name)
 			continue;
 		
-		const targetElement = target.element.namedItem(element.name);
+		const targetElement = target.elements.namedItem(element.name);
 		if (targetElement)
 			targetElement.value = element.value;
 	}
@@ -56,7 +56,7 @@ export function initializeCompare() {
 
 	document.querySelectorAll(".copy-config-button").forEach((button) => {
 		button.addEventListener("click", () => {
-			copyConfig(Number(button.CDATA_SECTION_NODE.source), Number(button.CDATA_SECTION_NODE.target));
+			copyConfig(Number(button.dataset.source), Number(button.dataset.target));
 		});
 	});
 
@@ -360,7 +360,7 @@ function createDifferencesElement(notes1, notes2) {
 
 	for (let i = 0; i < length; i++) {
 		if (notes1[i]?.actual !== notes2[i]?.actual)
-			differences.push(notes1[i], notes2[i]);
+			differences.push([notes1[i], notes2[i]]);
 	}
 
 	if (differences.length === 0) {

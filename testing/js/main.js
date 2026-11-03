@@ -75,16 +75,32 @@ function getTestConfig(test) {
 function initializeTabs() {
 	const tabs = document.querySelectorAll(".app-tab");
 
+	
+
+	const showView = () => {
+		const hash = location.hash.slice(1);
+		const active = [...tabs].find((tab) => getTabHash(tab) === hash) ?? tabs[0];
+		
+		tabs.forEach((tab) => {
+			const selected = tab === active;
+
+			tab.classList.toggle("active", selected);
+			document.getElementById(tab.dataset.view).hidden = !selected;
+		});
+	};
+
 	tabs.forEach((tab) => {
 		tab.addEventListener("click", () => {
-			tabs.forEach((other) => {
-				const selected = other === tab;
-
-				other.classList.toggle("active", selected);
-				document.getElementById(other.dataset.view).hidden = !selected;
-			});
+			location.hash = getTabHash(tab);
 		});
 	});
+
+	window.addEventListener("hashchange", showView);
+	showView();
+}
+
+function getTabHash(tab) {
+	return tab.dataset.view.replace(/-view$/, "");
 }
 
 function renderTests() {

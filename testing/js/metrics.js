@@ -131,7 +131,7 @@ function computeScores(noteResults) {
 
 		const precision = predicted > 0 ? truePositives / predicted : 0;
 		const recall = expected > 0 ? truePositives / expected : 0;
-		const f1 = predicted + recall > 0 ? 2 * precision * recall / (precision + recall) : 0;
+		const f1 = precision + recall > 0 ? 2 * precision * recall / (precision + recall) : 0;
 
 		return ({ precision, recall, f1});
 	})
@@ -143,7 +143,7 @@ function computeScores(noteResults) {
 	};
 }
 
-export function compareMetric(matric, value1, value2) {
+export function compareMetric(metric, value1, value2) {
 	if (!Number.isFinite(value1) || !Number.isFinite(value2))
 		return 0;
 
@@ -170,7 +170,7 @@ export function formatMetricDelta(metric, value1, value2) {
 		return "-";
 
 	const delta = value2 - value1;
-	const sign = delta > 0 ? "+" : "-"; 
+	const sign = delta > 0 ? "+" : ""; 
 
 	if (metric.format === "percent")
 		return `${sign}${(delta * 100).toFixed(1)}pp`;

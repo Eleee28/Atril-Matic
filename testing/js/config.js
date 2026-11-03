@@ -134,7 +134,7 @@ export function setConfig(config, form = getDefaultForm()) {
 			if (algType === "fft-peak-with-harmonics")
 				type = "fft-harmonics";
 			
-			const field = form.elements.namedItem("pitchAlgorithm");
+			const field = form.elements.namedItem("pitchAlgorithmType");
 			if (field)
 				field.value = type;
 			if (value.magnitudeThreshold !== undefined && form.elements.namedItem("magnitudeThreshold"))
@@ -222,13 +222,13 @@ export function updateValidationUI(form = getDefaultForm()) {
 	return false;
 }
 
-export function saveConfig(config) {
-	localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+export function saveConfig(config, storageKey = STORAGE_KEY) {
+	localStorage.setItem(storageKey, JSON.stringify(config));
 }
 
-export function loadConfig() {
+export function loadConfig(storageKey = STORAGE_KEY) {
 	try {
-		const stored = localStorage.getItem(STORAGE_KEY);
+		const stored = localStorage.getItem(storageKey);
 		if (!stored)
 			return getDefaultConfig();
 
@@ -242,27 +242,27 @@ export function loadConfig() {
 	}
 }
 
-export function resetConfig(form = getDefaultForm()) {
+export function resetConfig(form = getDefaultForm(), storageKey = STORAGE_KEY) {
 	const config = getDefaultConfig();
 
 	setConfig(config, form);
-	saveConfig(config);
+	saveConfig(config, storageKey);
 
 	return config;
 }
 
-export function handleConfigChange(form = getDefaultForm()) {
+export function handleConfigChange(form = getDefaultForm(), storageKey = STORAGE_KEY) {
 	const config = getConfig(form);
 
-	saveConfig(config);
+	saveConfig(config, storageKey);
 	updateValidationUI(form);
 }
 
-export function initializeConfig(form = getDefaultForm()) {
+export function initializeConfig(form = getDefaultForm(), storageKey = STORAGE_KEY) {
 
-	setConfig(loadConfig(), form);
+	setConfig(loadConfig(storageKey), form);
 
-	const onChange = () => handleConfigChange(form);
+	const onChange = () => handleConfigChange(form, storageKey);
 
 	form.addEventListener("input", onChange);
 
@@ -270,7 +270,7 @@ export function initializeConfig(form = getDefaultForm()) {
 
 	form.addEventListener("reset", (event) => {
 		event.preventDefault();
-		resetConfig(form);
+		resetConfig(form, storageKey);
 		updateValidationUI(form);
 	});
 
