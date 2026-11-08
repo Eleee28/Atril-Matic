@@ -1,5 +1,7 @@
 import { executeTest } from "./wasm-adapter.js";
 
+const DEFAULT_TOLERANCE_MS = 50;
+
 export const TestStatus = Object.freeze({
 	PENDING: "pending",
 	RUNNING: "running",
@@ -71,7 +73,7 @@ function compareResults(test, actual) {
 			);
 
 		case "audio-recognition":
-			return compareNotes(actual.notes, test.expected.notes);
+			return compareNotes(actual.notes, test.expected.notes, test.expected.toleranceMs ?? DEFAULT_TOLERANCE_MS);
 		
 		case "score-tracking":
 			return compareCursor(actual, test.expected);
@@ -81,11 +83,11 @@ function compareResults(test, actual) {
 	}
 }
 
-function compareNotes(actual, expected) {
+function compareNotes(actual, expected, toleranceMs) {
 	if (!Array.isArray(actual) || !Array.isArray(expected))
 		return false;
 
-	if (actual.length !== expected.length())
+	if (actual.length !== expected.length)
 		return false;
 
 	return expected.every((note, index) => {
@@ -93,8 +95,8 @@ function compareNotes(actual, expected) {
 
 		return (
 			detected.note === note.note &&
-			detected.start === note.start &&
-			detected.end === note.end
+			Math.abs(detected.start - note.start) <= toleranceMs &&
+			Math.abs(detected.end - note.end) <= toleranceMs
 		);
 	});
 }

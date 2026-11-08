@@ -49,7 +49,24 @@ export function validateTest(test) {
 			throw new Error("Invalid duration.");
 	}
 
-	if (test.type === "audio-recognition" || test.type === "score-tracking") {
+	if (test.type === "audio-recognition") {
+		const notes = test.expected.notes;
+
+		if (test.input.type !== "audio")
+			throw new Error("Audio recognition input type must be audio.");
+
+		if (!Array.isArray(notes) || notes.length === 0)
+			throw new Error("Expected notes must be a non-empty array.");
+
+		if (notes.some(item => 
+			typeof item?.note !== "string" || !item.note.trim() ||
+			!Number.isFinite(item.start) || !Number.isFinite(item.end) ||
+			item.start < 0 || item.end <= item.start
+		))
+			throw new Error("Each expected note must have a note name and a valid start and end in ms.");
+	}
+
+	if (test.type === "score-tracking") {
 		if (typeof test.input.audioFile !== "string") 
 			throw new Error("Audio tests must define an audioFile.");
 	}

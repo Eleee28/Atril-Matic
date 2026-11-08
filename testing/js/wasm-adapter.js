@@ -2,6 +2,8 @@ import init, { AudioProcessor } from "../wasm/audio_processor.js";
 import { generateSineWave } from "./audio-generator.js";
 import { getMedian } from "./metrics.js";
 
+const DEFAULT_MIN_NOTE_DURATION_MS = 50;
+
 let wasmInitialized = false;
 
 async function initializeWasm() {
@@ -66,11 +68,7 @@ async function executePitchDetectionTest(test, config) {
 				durationMs: test.input.durationMs,
 			});
 
-			const windows = splitIntoWindows(
-				samples, 
-				config.fftSize, 
-				config.hopSize
-			);
+			const windows = splitIntoWindows(samples, config.fftSize, config.hopSize);
 			
 			if (windows.length === 0)
 				throw new Error(`Signal of ${samples.length} samples is shorter than fftSize ${config.fftSize}. Increase durationMs.`);
@@ -141,8 +139,6 @@ async function executePitchDetectionTest(test, config) {
 			});
 		}
 
-		
-
 		return {
 			total: results.length,
 			passed: results.filter(r => r.passed).length,
@@ -186,7 +182,104 @@ function calculateFrequencyError(expected, detected) {
 }
 
 async function executeAudioRecognitionTest(test, config) {
-	throw new Error("Audio recognition WASM adapter is not implemented yet.");
+	// throw new Error("Audio recognition WASM adapter is not implemented yet.");
+
+	const { samples, durationMs } = await loadAudioSamples(test.input.audioFile, config.sampleRate);
+
+	const windows = splitIntoWindows(samples, config.fftSize, config.hopSize);
+	if (windows.length === 0)
+		throw new Error(`Audio file of ${samples.length} samples is shorter than fftSize ${config.fftSize}.`);
+
+	const processor = createProcessor(config);
+
+	try {
+		const hopMs = config.hopSize / config.sampleRate * 1000;
+		const windowMs = config.fftSize / config.sampleRate * 1000;
+
+		const detectedNotes = windows.map((window, index) => {
+			const detected = JSON.parse(processor.detect_pitch_details(window));
+			const centerMs = index * hopMs + windowMs / 2;
+
+			return {
+				note: detected.note,
+				start: index === 0 ? 0 : centerMs - hopMs / 2,
+				end : index === windows.length - 1 ? durationMs : centerMs + hopMs / 2,
+			};
+		});
+
+		const minDurationMs = test.input.minNoteDurationMs ?? DEFAULT_MIN_NOTE_DURATION_MS;
+
+		const notes = mergeConsecutiveNotes(
+			mergeConsecutiveNotes(detectedNotes)
+			.filter(note => note.end - note.start >= minDurationMs)
+		).filter(note => note.note !== null)
+		.map(note => ({
+			note: note.note,
+			start: Math.round(note.start),
+			end: Math.round(note.end),
+		}));
+
+		return {
+			totalWindows: windows.length,
+			notes,
+		};
+	} finally {
+		processor.free();
+	}
+}
+
+async function loadAudioSamples(url, sampleRate) {
+	const response = await fetch(url);
+
+	if (!response.ok) 
+		throw new Error(`Failed to load audio file ${url}: ${response.status} ${response.statusText}`);
+
+	const context = new OfflineAudioContext(1, 1, sampleRate); // https://developer.mozilla.org/en-US/docs/Web/API/OfflineAudioContext
+	const buffer = await context.decodeAudioData(await response.arrayBuffer()); // https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/decodeAudioData
+
+	return {
+		samples: toByteSamples(mixToMono(buffer)),
+		durationMs: buffer.duration * 1000,
+	};
+}
+
+function mixToMono(buffer) {
+	const mono = new Float32Array(buffer.length);
+
+	for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+		const data = buffer.getChannelData(channel); // https://developer.mozilla.org/en-US/docs/Web/API/AudioBuffer/getChannelData
+
+		for (let i = 0; i < data.length; i++)
+			mono[i] += data[i] / buffer.numberOfChannels;
+	}
+
+	return mono;
+}
+
+function toByteSamples(samples) {
+	const bytes = new Uint8Array(samples.length);
+
+	for (let i = 0; i < samples.length; i++) {
+		const value = Math.max(-1, Math.min(1, samples[i]));
+		bytes[i] = Math.round((value + 1) * 127.5);
+	}
+
+	return bytes;
+}
+
+function mergeConsecutiveNotes(notes) {
+	const merged = [];
+
+	for (const note of notes) {
+		const last = merged.at(-1);
+
+		if (last && last.note === note.value)
+			last.end = note.end;
+		else
+			merged.push({ ...note });
+	}
+
+	return merged;
 }
 
 async function executeScoreTrackingTest(test, config) {
