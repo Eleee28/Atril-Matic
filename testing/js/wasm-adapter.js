@@ -1,5 +1,6 @@
 import init, { AudioProcessor } from "../wasm/audio_processor.js";
 import { generateSineWave } from "./audio-generator.js";
+import { getMedian } from "./metrics.js";
 
 let wasmInitialized = false;
 
@@ -166,20 +167,6 @@ function getMostFrequentNote(notes) {
 	return [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
 }
 
-function getMedian(values) {
-	if (values.length === 0)
-		return null;
-
-	const sorted = [...values].sort((a, b) => a - b);
-
-	const middle = Math.floor(sorted.length / 2);
-
-	if (sorted.length % 2 === 0)
-		return (sorted[middle - 1] + sorted[middle]) / 2;
-
-	return sorted[middle];
-}
-
 // Calculates the error between two frequencies:
 //	- Absolute error: Error (Hz) = | f_detected - f_expected |
 //	- Error in cents: Error (cents) = 1200 log_2(f_detected / f_expected)
@@ -212,17 +199,13 @@ function validateSupportedConfig(config) {
 	if (config.windowSize !== config.fftSize)
 		errors.push("Different windowSize and fftSize are not supported yet.");
 
-	if (config.windowFunction !== "hann")
-		errors.push("Only Hann window is currently supported.");
-
-	const algType = config.pitchAlgorithm?.type || config.pitchAlgorithm;
-	if (algType !== "fft-peak")
-		errors.push("Only FFT Peak is currently supported.");
-
 	if (config.trackThreshold !== 0.9 ||
 		config.slack !== 2
 	)
 		errors.push("Custom DTW paramenters are not supported yet.");
+
+	if (config.tauMax > config.fftSize / 2)
+		errors.push("Invalid tauMax value.");
 
 	if (errors.length > 0)
 		throw new Error(errors.join("\n"));

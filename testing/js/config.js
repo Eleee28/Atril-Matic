@@ -14,7 +14,7 @@ const DEFAULT_CONFIG = {
 	maxHarmonicDivisor: 4,
 	subharmonicThreshold: 0.5,
 	tauMin: 1,
-	tauMax: 10,
+	tauMax: 800,
 	yinThreshold: 0.15,
 
 	queryCapacity: 50,
@@ -44,6 +44,10 @@ const NUMERIC_FIELDS = new Set([
 	"recoverAfter",
 ]);
 
+function getDefaultForm() {
+	return document.getElementById("configuration-form");
+}
+
 export function getDefaultConfig() {
 	return { ...DEFAULT_CONFIG };
 }
@@ -54,44 +58,47 @@ function buildPitchAlgorithm(formValues) {
 	if (algorithmType === "fft-peak") {
 		return {
 			type: "fft-peak",
-			magnitudeThreshold: formValues.magnitudeThreshold ?? 10,
+			magnitudeThreshold: formValues.magnitudeThreshold ?? DEFAULT_CONFIG.magnitudeThreshold,
 		};
-	} else if (algorithmType === "fft-harmonics" || algorithmType === "fft-peak-with-harmonics") {
+	}
+	else if (algorithmType === "fft-harmonics" || algorithmType === "fft-peak-with-harmonics") {
 		return {
 			type: "fft-peak-with-harmonics",
-			magnitudeThreshold: formValues.magnitudeThreshold ?? 10,
-			maxHarmonicDivisor: formValues.maxHarmonicDivisor ?? 4,
-			subharmonicThreshold: formValues.subharmonicThreshold ?? 0.5,
+			magnitudeThreshold: formValues.magnitudeThreshold ?? DEFAULT_CONFIG.magnitudeThreshold,
+			maxHarmonicDivisor: formValues.maxHarmonicDivisor ?? DEFAULT_CONFIG.maxHarmonicDivisor,
+			subharmonicThreshold: formValues.subharmonicThreshold ?? DEFAULT_CONFIG.subharmonicThreshold,
 		};
-	} else if (algorithmType === "hps") {
+	}
+	else if (algorithmType === "hps") {
 		return {
 			type: "hps",
-			magnitudeThreshold: formValues.magnitudeThreshold ?? 10,
+			magnitudeThreshold: formValues.magnitudeThreshold ?? DEFAULT_CONFIG.magnitudeThreshold,
 		};
-	} else if (algorithmType === "hps-with-harmonics" || algorithmType === "hpsWithHarmonics") {
+	}
+	else if (algorithmType === "hps-with-harmonics" || algorithmType === "hpsWithHarmonics") {
 		return {
 			type: "hps-with-harmonics",
-			magnitudeThreshold: formValues.magnitudeThreshold ?? 10,
-			maxHarmonicDivisor: formValues.maxHarmonicDivisor ?? 4,
-			subharmonicThreshold: formValues.subharmonicThreshold ?? 0.5,
+			magnitudeThreshold: formValues.magnitudeThreshold ?? DEFAULT_CONFIG.magnitudeThreshold,
+			maxHarmonicDivisor: formValues.maxHarmonicDivisor ?? DEFAULT_CONFIG.maxHarmonicDivisor,
+			subharmonicThreshold: formValues.subharmonicThreshold ?? DEFAULT_CONFIG.subharmonicThreshold,
 		};
-	} else if (algorithmType === "yin") {
+	}
+	else if (algorithmType === "yin") {
 		return {
 			type: "yin",
-			tauMin: formValues.tauMin ?? 1,
-			tauMax: formValues.tauMax ?? 10,
-			yinThreshold: formValues.yinThreshold ?? 0.15,
+			tauMin: formValues.tauMin ?? DEFAULT_CONFIG.tauMin,
+			tauMax: formValues.tauMax ?? DEFAULT_CONFIG.tauMax,
+			yinThreshold: formValues.yinThreshold ?? DEFAULT_CONFIG.yinThreshold,
 		};
 	}
 
 	return {
 		type: "fft-peak",
-		magnitudeThreshold: formValues.magnitudeThreshold ?? 10,
+		magnitudeThreshold: formValues.magnitudeThreshold ?? DEFAULT_CONFIG.magnitudeThreshold,
 	};
 }
 
-export function getConfig() {
-	const form = document.getElementById("configuration-form");
+export function getConfig(form = getDefaultForm()) {
 	const formData = new FormData(form);
 
 	const formValues = {};
@@ -118,23 +125,30 @@ export function getConfig() {
 	return config;
 }
 
-export function setConfig(config) {
-	const form = document.getElementById("configuration-form");
+export function setConfig(config, form = getDefaultForm()) {
 
 	for (const [key, value] of Object.entries(config)) {
-		if (key === "pitchAlgorithm" && typeof value === "object" && value !== null) {
+		if (key === "pitchAlgorithm" && typeof value === "object" && value != null) {
 			const algType = value.type;
 			let type = algType;
-			if (algType === "fft-peak-with-harmonics") type = "fft-harmonics";
-			else if (algType === "hps-with-harmonics") type = "hps-with-harmonics";
+			if (algType === "fft-peak-with-harmonics")
+				type = "fft-harmonics";
+			
 			const field = form.elements.namedItem("pitchAlgorithmType");
-			if (field) field.value = type === "fft-peak-with-harmonics" ? "fft-harmonics" : type === "hps-with-harmonics" ? "hps-with-harmonics" : algType;
-			if (value.magnitudeThreshold !== undefined && form.elements.namedItem("magnitudeThreshold")) form.elements.namedItem("magnitudeThreshold").value = value.magnitudeThreshold;
-			if (value.maxHarmonicDivisor !== undefined && form.elements.namedItem("maxHarmonicDivisor")) form.elements.namedItem("maxHarmonicDivisor").value = value.maxHarmonicDivisor;
-			if (value.subharmonicThreshold !== undefined && form.elements.namedItem("subharmonicThreshold")) form.elements.namedItem("subharmonicThreshold").value = value.subharmonicThreshold;
-			if (value.tauMin !== undefined && form.elements.namedItem("tauMin")) form.elements.namedItem("tauMin").value = value.tauMin;
-			if (value.tauMax !== undefined && form.elements.namedItem("tauMax")) form.elements.namedItem("tauMax").value = value.tauMax;
-			if (value.yinThreshold !== undefined && form.elements.namedItem("yinThreshold")) form.elements.namedItem("yinThreshold").value = value.yinThreshold;
+			if (field)
+				field.value = type;
+			if (value.magnitudeThreshold !== undefined && form.elements.namedItem("magnitudeThreshold"))
+				form.elements.namedItem("magnitudeThreshold").value = value.magnitudeThreshold;
+			if (value.maxHarmonicDivisor !== undefined && form.elements.namedItem("maxHarmonicDivisor"))
+				form.elements.namedItem("maxHarmonicDivisor").value = value.maxHarmonicDivisor;
+			if (value.subharmonicThreshold !== undefined && form.elements.namedItem("subharmonicThreshold"))
+				form.elements.namedItem("subharmonicThreshold").value = value.subharmonicThreshold;
+			if (value.tauMin !== undefined && form.elements.namedItem("tauMin"))
+				form.elements.namedItem("tauMin").value = value.tauMin;
+			if (value.tauMax !== undefined && form.elements.namedItem("tauMax"))
+				form.elements.namedItem("tauMax").value = value.tauMax;
+			if (value.yinThreshold !== undefined && form.elements.namedItem("yinThreshold"))
+				form.elements.namedItem("yinThreshold").value = value.yinThreshold;
 			continue;
 		}
 		const field = form.elements.namedItem(key);
@@ -147,44 +161,45 @@ export function validateConfig(config) {
 	const errors = [];
 
 	if (config.windowSize > config.fftSize)
-		errors.push("Window size cannot be greater than FFT size.")
+		errors.push("Window size cannot be greater than FFT size.");
 
 	if (config.hopSize > config.windowSize)
-		errors.push("Hop size cannot be greater than window size.")
+		errors.push("Hop size cannot be greater than window size.");
 
 	if (config.minFrequency >= config.maxFrequency)
-		errors.push("Minimum frequency must be lower than maximum frequency.")
+		errors.push("Minimum frequency must be lower than maximum frequency.");
 
 	if (config.maxFrequency > config.sampleRate / 2)
-		errors.push("Maximum frequency cannot exceed the Hyquist frequency (sample rate / 2).")
+		errors.push("Maximum frequency cannot exceed the Hyquist frequency (sample rate / 2).");
 
 	const alg = config.pitchAlgorithm || {};
+
 	if (alg.magnitudeThreshold !== undefined && alg.magnitudeThreshold < 0)
-		errors.push("Magnitude threshold cannot be negative.")
+		errors.push("Magnitude threshold cannot be negative.");
 
 	if (alg.subharmonicThreshold !== undefined && alg.subharmonicThreshold < 0)
-		errors.push("Subharmonic threshold cannot be negative.")
+		errors.push("Subharmonic threshold cannot be negative.");
 
 	if (alg.yinThreshold !== undefined && alg.yinThreshold < 0)
-		errors.push("YIN threshold cannot be negative.")
+		errors.push("YIN threshold cannot be negative.");
 
 	if (config.queryCapacity < 1)
-		errors.push("Query capacity must be greater than zero.")
+		errors.push("Query capacity must be greater than zero.");
 
 	if (config.acceptThreshold < 0)
-		errors.push("Accept threshold cannot be negative.")
+		errors.push("Accept threshold cannot be negative.");
 
 	if (config.trackThreshold < 0)
-		errors.push("Track threshold cannot be negative.")
+		errors.push("Track threshold cannot be negative.");
 
 	return errors;
 }
 
-export function updateValidationUI() {
-	const config = getConfig();
+export function updateValidationUI(form = getDefaultForm()) {
+	const config = getConfig(form);
 	const errors = validateConfig(config);
 
-	const container = document.getElementById("configuration-errors");
+	const container = form.querySelector(".configuration-errors");
 
 	if (errors.length === 0) {
 		container.hidden = true;
@@ -207,13 +222,13 @@ export function updateValidationUI() {
 	return false;
 }
 
-export function saveConfig(config) {
-	localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+export function saveConfig(config, storageKey = STORAGE_KEY) {
+	localStorage.setItem(storageKey, JSON.stringify(config));
 }
 
-export function loadConfig() {
+export function loadConfig(storageKey = STORAGE_KEY) {
 	try {
-		const stored = localStorage.getItem(STORAGE_KEY);
+		const stored = localStorage.getItem(storageKey);
 		if (!stored)
 			return getDefaultConfig();
 
@@ -227,36 +242,37 @@ export function loadConfig() {
 	}
 }
 
-export function resetConfig() {
+export function resetConfig(form = getDefaultForm(), storageKey = STORAGE_KEY) {
 	const config = getDefaultConfig();
 
-	setConfig(config);
-	saveConfig(config);
+	setConfig(config, form);
+	saveConfig(config, storageKey);
 
 	return config;
 }
 
-function handleConfigChange() {
-	const config = getConfig();
+export function handleConfigChange(form = getDefaultForm(), storageKey = STORAGE_KEY) {
+	const config = getConfig(form);
 
-	saveConfig(config);
-	updateValidationUI();
+	saveConfig(config, storageKey);
+	updateValidationUI(form);
 }
 
-export function initializeConfig() {
-	const form = document.getElementById("configuration-form");
-	
-	setConfig(loadConfig());
+export function initializeConfig(form = getDefaultForm(), storageKey = STORAGE_KEY) {
 
-	form.addEventListener("input", handleConfigChange);
+	setConfig(loadConfig(storageKey), form);
 
-	form.addEventListener("change", handleConfigChange);
+	const onChange = () => handleConfigChange(form, storageKey);
 
-	form.addEventListener("reset", () => {
+	form.addEventListener("input", onChange);
+
+	form.addEventListener("change", onChange);
+
+	form.addEventListener("reset", (event) => {
 		event.preventDefault();
-		resetConfig();
-		updateValidationUI();
+		resetConfig(form, storageKey);
+		updateValidationUI(form);
 	});
 
-	updateValidationUI();
+	updateValidationUI(form);
 }

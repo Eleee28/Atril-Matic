@@ -124,8 +124,6 @@ function createResultElement(result) {
 			for (const item of failedResults) {
 				const row = document.createElement("tr");
 
-				console.log("result item: ", item);
-
 				const values = [
 					`${item.frequency.toFixed(2)} Hz`,
 

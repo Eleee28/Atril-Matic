@@ -18,9 +18,18 @@
 					<h1>Atril-Matic Testing</h1>
 					<p>Audio recognition testing and debugging tool</p>
 				</div>
+
+				<nav class="app-tabs" role="tablist">
+					<button type="button" class="app-tab active" role="tab" data-view="single-view">
+						Single Run
+					</button>
+					<button type="button" class="app-tab" role="tab" data-view="compare-view">
+						Compare
+					</button>
+				</nav>
 			</header>
 
-			<main class="app-content">
+			<main id="single-view" class="app-content" role="tabpanel">
 
 				<section class="panel configuration-panel">
 					<h2>Configuration</h2>
@@ -30,7 +39,6 @@
 							id="configuration-errors"
 							class="configuration-errors"
 							role="alert"
-							aria-live="polite"
 							hidden
 						></div>
 						
@@ -55,6 +63,7 @@
 									<option value="4096">4096</option>
 									<option value="8192">8192</option>
 									<option value="16384">16384</option>
+									<option value="65536">65536</option>
 								</select>
 
 								<label for="window-size">Window Size</label>
@@ -64,6 +73,7 @@
 									<option value="2048">2048</option>
 									<option value="4096">4096</option>
 									<option value="8192">8192</option>
+									<option value="65536">65536</option>
 								</select>
 
 								<label for="hop-size">Hop Size</label>
@@ -163,7 +173,7 @@
 									type="number"
 									id="tau-max"
 									name="tauMax"
-									value="10"
+									value="800"
 									min="1"
 									step="1"
 								>
@@ -350,6 +360,135 @@
 					</div>
 
 					<pre id="debug-output" class="debug-output"></pre>
+				</section>
+			</main>
+
+			<main id="compare-view" class="app-content compare-content" role="tabpanel" hidden>
+
+				<section class="panel configuration-panel">
+					<div class="panel-header">
+						<h2>Config 1</h2>
+
+						<button type="button" class="copy-config-button" data-source="1" data-target="2">
+							Copy to Config 2 &rarr;
+						</button>
+					</div>
+
+					<div id="compare-config-1" class="compare-config-slot"></div>
+				</section>
+
+				<section class="panel configuration-panel">
+					<div class="panel-header">
+						<h2>Config 2</h2>
+
+						<button type="button" class="copy-config-button" data-source="2" data-target="1">
+							&larr; Copy to Config 1
+						</button>
+					</div>
+
+					<div id="compare-config-2" class="compare-config-slot"></div>
+				</section>
+
+				<section class="panel tests-panel">
+					<h2>Tests</h2>
+
+					<div class="test-actions">
+						<button type="button" id="compare-run-all-button">
+							Run All Tests
+						</button>
+
+						<button type="button" id="compare-load-test-button">
+							Load JSON
+						</button>
+
+						<input
+							type="file"
+							id="compare-test-file-input"
+							accept=".json,application/json"
+							hidden
+						>
+					</div>
+
+					<div class="test-options">
+						<p class="test-options-note">
+							Each test runs with Config 1 and Config 2. The test's own configuration is ignored.
+						</p>
+					</div>
+
+					<div id="compare-tests-list" class="tests-list">
+						<p class="empty-state">
+							No tests loaded.
+						</p>
+					</div>
+				</section>
+
+				<section class="panel results-panel">
+					<div class="panel-header">
+						<h2>Comparison Results</h2>
+
+						<button type="button" id="compare-clear-results-button">
+							Clear Results
+						</button>
+					</div>
+
+					<div class="results-summary">
+						<div class="stat">
+							<span class="stat-label">Total</span>
+							<span id="compare-total-tests">0</span>
+						</div>
+
+						<div class="stat">
+							<span class="stat-label">Config 1 Passed</span>
+							<span id="compare-passed-1" class="stat-success">0</span>
+						</div>
+
+						<div class="stat">
+							<span class="stat-label">Config 2 Passed</span>
+							<span id="compare-passed-2" class="stat-success">0</span>
+						</div>
+
+						<div class="stat">
+							<span class="stat-label">Errors</span>
+							<span id="compare-error-tests">0</span>
+						</div>
+
+						<div class="stat">
+							<span class="stat-label">Better Config (F1)</span>
+							<span id="compare-better-config">-</span>
+						</div>
+					</div>
+
+					<div id="compare-results-list" class="results-list">
+						<p class="empty-state">
+							Run a test to compare both configurations.
+						</p>
+					</div>
+				</section>
+
+				<section class="panel logs-panel">
+					<div class="panel-header">
+						<h2>Debug Logs</h2>
+
+						<div class="log-actions">
+							<label for="compare-enable-debug-logs">
+								<input 
+									type="checkbox"
+									id="compare-enable-debug-logs"
+								>
+								Enable Debug Logs
+							</label>
+
+							<button type="button" id="compare-download-logs-button">
+								Download Logs
+							</button>
+
+							<button type="button" id="compare-clear-logs-button">
+								Clear
+							</button>
+						</div>
+					</div>
+
+					<pre id="compare-debug-output" class="debug-output"></pre>
 				</section>
 			</main>
 		</div>
